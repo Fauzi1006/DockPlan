@@ -260,7 +260,7 @@
         2026 Copy Right Ahmad Fauzi - DockPlan System - ALL RIGHTS RESERVED
     </div>
 
-    <div id="login-screen" class="fixed inset-0 bg-[#0f172a] z-[100] flex items-center justify-center transition-all duration-500">
+    <div id="login-screen" class="fixed inset-0 bg-[#0f172a] z-[100] flex items-center justify-center transition-all duration-500 hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 border border-slate-600 text-center">
             <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
                 <i class="fas fa-key text-white text-2xl"></i>
@@ -281,7 +281,7 @@
                     <i class="fas fa-sign-in-alt"></i> MASUK
                 </button>
             </div>
-            <p class="mt-6 text-[10px] text-slate-400 font-bold">PT. CONTOH LOGISTIK INDONESIA</p>
+            <p class="mt-6 text-[10px] text-slate-400 font-bold">INDAH KIAT KARAWANG - 2026</p>
         </div>
     </div>
 
@@ -332,74 +332,111 @@
 
     // --- FUNGSI PROSES LOGIN (BARU) ---
     function prosesLogin() {
-        // 1. Ambil input Username & Password dari HTML
-        // (Pastikan elemen HTML sudah diganti sesuai Langkah 1 sebelumnya)
-        const userIn = document.getElementById('username-input').value.toUpperCase().trim();
-        const passIn = document.getElementById('password-input').value.trim();
+    // 1. Ambil input Username & Password dari HTML
+    const userIn = document.getElementById('username-input').value.toUpperCase().trim();
+    const passIn = document.getElementById('password-input').value.trim();
 
-        // 2. Cek apakah Username ada di daftar?
-        const akun = DAFTAR_AKUN[userIn];
+    // 2. Cek apakah Username ada di daftar?
+    const akun = DAFTAR_AKUN[userIn];
 
-        if (!akun) {
-            Swal.fire('Gagal', 'Username tidak ditemukan!', 'error');
-            return;
-        }
-
-        // 3. Cek apakah Password benar?
-        if (akun.pass !== passIn) {
-            Swal.fire('Gagal', 'Password Salah!', 'error');
-            return;
-        }
-
-        // --- LOGIN BERHASIL ---
-        USER_ROLE = akun.role;
-        USER_NAME = akun.nama; // Pakai Nama Resmi PT (Bukan ketikan user)
-
-        // Hilangkan Layar Login
-        document.getElementById('login-screen').classList.add('opacity-0', 'pointer-events-none');
-        
-        // Bersihkan input form biar aman
-        document.getElementById('username-input').value = '';
-        document.getElementById('password-input').value = '';
-
-        // Update Tampilan (Sembunyikan Menu Input jika bukan Admin)
-        updateUIByRole();
-        
-        // Filter Tabel (Hanya munculkan data milik PT tersebut)
-        renderTable(); 
-
-        // Sapa User
-        Swal.fire({
-            icon: 'success',
-            title: `Selamat Datang`,
-            text: `${USER_NAME} (${USER_ROLE})`,
-            timer: 1500, showConfirmButton: false
-        });
+    if (!akun) {
+        Swal.fire('Gagal', 'Username tidak ditemukan!', 'error');
+        return;
     }
+
+    // 3. Cek apakah Password benar?
+    if (akun.pass !== passIn) {
+        Swal.fire('Gagal', 'Password Salah!', 'error');
+        return;
+    }
+
+    // --- LOGIN BERHASIL ---
+    
+    // Simpan ke LocalStorage agar saat refresh tidak login ulang
+    localStorage.setItem('dockplan_session', JSON.stringify({
+        username: userIn,
+        role: akun.role,
+        nama: akun.nama
+    }));
+
+    // Jalankan fungsi masuk (saya sarankan gunakan fungsi terpisah agar bisa dipanggil saat auto-login)
+    masukAplikasi(akun.role, akun.nama);
+
+    // Sapa User
+    Swal.fire({
+        icon: 'success',
+        title: `Selamat Datang`,
+        text: `${akun.nama} (${akun.role})`,
+        timer: 1500, showConfirmButton: false
+    });
+}
+
+// Fungsi tambahan untuk menangani visual perpindahan halaman
+function masukAplikasi(role, nama) {
+    USER_ROLE = role;
+    USER_NAME = nama;
+
+    // Sembunyikan Layar Login
+    const loginScreen = document.getElementById('login-screen');
+    loginScreen.classList.add('opacity-0', 'pointer-events-none');
+    
+    // Tambahkan class hidden setelah animasi selesai agar tidak menghalangi klik
+    setTimeout(() => { loginScreen.classList.add('hidden'); }, 500);
+
+    // Bersihkan input form biar aman
+    document.getElementById('username-input').value = '';
+    document.getElementById('password-input').value = '';
+
+    // Update Tampilan & Filter Tabel
+    updateUIByRole();
+    renderTable(); 
+}
+// --- POINT 2: FUNGSI MASUK APLIKASI ---
+function masukAplikasi(role, nama) {
+    // 1. Simpan identitas ke variabel global agar filter tabel bekerja
+    USER_ROLE = role;
+    USER_NAME = nama;
+
+    // 2. Sembunyikan Layar Login
+    const loginScreen = document.getElementById('login-screen');
+    
+    // Gunakan 'hidden' agar elemen benar-benar hilang dari layar
+    loginScreen.classList.add('hidden');
+    loginScreen.classList.add('opacity-0');
+    loginScreen.classList.add('pointer-events-none');
+
+    // 3. Update judul subtitle di header agar sesuai role
+    const subtitle = document.getElementById('page-subtitle');
+    if (subtitle) {
+        subtitle.innerText = `LOGGED IN AS: ${nama} (${role})`;
+    }
+
+    // 4. Jalankan fungsi penyesuaian UI dan Render Tabel
+    updateUIByRole(); // Menampilkan/menyembunyikan menu berdasarkan role
+    renderTable();    // Menggambar tabel dengan filter yang sesuai
+    updateStats();    // Memperbarui angka statistik
+}
 
     // --- FUNGSI LOGOUT / KELUAR ---
-    function logout() {
-        Swal.fire({
-            title: 'Keluar Aplikasi?',
-            text: "Anda harus login ulang nanti.",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'YA, KELUAR',
-            confirmButtonColor: '#ef4444'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Munculkan lagi layar login
-                document.getElementById('login-screen').classList.remove('opacity-0', 'pointer-events-none');
-                
-                // Reset Variabel Hak Akses
-                USER_ROLE = '';
-                USER_NAME = '';
-                
-                // Kosongkan tabel sementara biar bersih
-                document.getElementById('table-body').innerHTML = '';
-            }
-        });
-    }
+    // --- POINT 4: LOGOUT & HAPUS SESI (UPDATE) ---
+function logout() {
+    Swal.fire({
+        title: 'Keluar Aplikasi?',
+        text: "Anda harus login ulang nanti.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'YA, KELUAR',
+        confirmButtonColor: '#ef4444'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // 1. Hapus data sesi dari LocalStorage agar tidak auto-login lagi
+            localStorage.removeItem('dockplan_session');
+            
+            // 2. Muat ulang halaman untuk membersihkan variabel dan kembali ke layar login
+            location.reload();
+        }
+    });
+}
 
     // --- FUNGSI ATUR TAMPILAN MENU ---
     function updateUIByRole() {
@@ -944,6 +981,29 @@
         Swal.fire('Fitur Dimatikan', 'Demi keamanan data Cloud, tombol Reset Global dinonaktifkan.', 'info');
     }
         renderTable();
+        // --- POINT 3: AUTO-LOGIN SAAT REFRESH ---
+// Fungsi ini akan berjalan otomatis setiap kali halaman dimuat (onload)
+window.onload = function() {
+    // 1. Cek apakah ada data login tersimpan di browser
+    const savedUser = localStorage.getItem('dockplan_session');
+
+    if (savedUser) {
+        // 2. Jika ada, bongkar datanya
+        const data = JSON.parse(savedUser);
+        
+        // 3. Langsung masuk ke aplikasi tanpa lewat layar login
+        masukAplikasi(data.role, data.nama);
+        
+        console.log("Auto-login berhasil sebagai: " + data.nama);
+    } else {
+        // 4. Jika tidak ada data, pastikan layar login muncul
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('login-screen').classList.remove('opacity-0');
+        document.getElementById('login-screen').classList.remove('pointer-events-none');
+        
+        console.log("Sesi tidak ditemukan, silakan login.");
+    }
+};
     </script>
 </body>
 </html>
