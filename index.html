@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DockPlan - Executive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: #0f172a; color: #e2e8f0; position: fixed; top: 0; left: 0; height: 100%; z-index: 50; border-right: 1px solid #1e293b; transition: all 0.3s; }
+        .sidebar.collapsed { width: 70px; }
+        .sidebar.collapsed .logo-text, .sidebar.collapsed .nav-text { display: none; }
+        .sidebar.collapsed .nav-item { justify-content: center; padding: 14px 0; }
+        
+        .nav-item { display: flex; align-items: center; padding: 14px 20px; margin: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #94a3b8; }
+        .nav-item.active { background: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: 260px; transition: margin-left 0.3s; padding-bottom: 40px; }
+        .main-content.expanded { margin-left: 70px; }
+
+        /* COPYRIGHT FOOTER */
+        .copyright-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            text-align: center; padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid #e2e8f0;
+            font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
+            z-index: 40; pointer-events: none;
+        }
+
+        /* STATS CARDS */
+        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .icon-box { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* TABLE STYLING */
+        .table-container { background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); overflow: hidden; border: 2px solid #64748b; }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        
+        thead { background: #1e293b; color: #ffffff; }
+        thead th { 
+            padding: 14px 4px; text-align: center; font-size: 11px; font-weight: 800; 
+            text-transform: uppercase; letter-spacing: 0.5px; border: 2px solid #475569; 
+            vertical-align: middle;
+        }
+        
+        td { 
+            padding: 10px 4px; font-size: 11px; color: #334155; border: 2px solid #94a3b8; 
+            vertical-align: middle; text-align: center; text-transform: uppercase; 
+            word-wrap: break-word; white-space: normal; line-height: 1.3; font-weight: 700;
+        }
+        
+        tbody tr:nth-child(even) { background-color: #f8fafc; }
+        tbody tr:hover { background-color: #e2e8f0; }
+        
+        /* UTILS */
+        input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .form-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; text-transform: uppercase; font-weight: 700; outline: none; transition: border 0.2s; }
+        .form-input:focus { border-color: #3b82f6; ring: 2px solid #bfdbfe; }
+        .swal2-input { margin: 5px 0 !important; font-size: 14px !important; }
+        .status-waiting { color: #dc2626; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside id="sidebar" class="sidebar flex flex-col">
+        <div class="h-16 flex items-center px-6 border-b border-white/10 bg-[#0b1120]">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg mr-3 shrink-0">
+                <i class="fas fa-truck-fast text-white text-sm"></i>
+            </div>
+            <div class="logo-text">
+                <h1 class="text-white font-bold text-lg tracking-tight">DockPlan</h1>
+                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Logistic System</p>
+            </div>
+        </div>
+        <nav class="flex-1 py-6 space-y-2">
+            <div onclick="showPage('input')" id="menu-input" class="nav-item"><i class="fas fa-keyboard w-5 text-center"></i><span class="nav-text">Input Data</span></div>
+            <div onclick="showPage('dashboard')" id="menu-dashboard" class="nav-item active"><i class="fas fa-desktop w-5 text-center"></i><span class="nav-text">Monitoring</span></div>
+        </nav>
+        <div class="p-4 border-t border-white/10 space-y-2">
+            
+            <button onclick="logout()" class="w-full py-2 rounded bg-red-600 text-white text-[10px] font-bold hover:bg-red-700 transition flex items-center justify-center gap-2 shadow-lg">
+                <i class="fas fa-sign-out-alt"></i> KELUAR / GANTI AKUN
+            </button>
+
+            <button onclick="resetData()" class="w-full py-2 rounded bg-slate-800 text-slate-400 text-[10px] font-bold hover:text-white transition flex items-center justify-center gap-2">
+                <i class="fas fa-trash-alt"></i> RESET DATA
+            </button>
+            
+        </div>
+    </aside>
+
+    <main id="main-content" class="main-content flex-1 h-full overflow-y-auto pb-20 relative">
+        <header class="bg-white h-16 border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm/50 backdrop-blur-md bg-white/90">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="text-slate-400 hover:text-blue-600 transition"><i class="fas fa-bars text-lg"></i></button>
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 tracking-tight">DOCKING PLANNING SYSTEM</h2>
+                    <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wide" id="page-subtitle">Monitoring Overview</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                    <p class="text-[10px] font-bold text-slate-700">Logistic Admin</p>
+                    <p class="text-[9px] text-slate-400">Plant Karawang</p>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 shadow-inner"><i class="fas fa-user-tie text-sm"></i></div>
+            </div>
+        </header>
+
+        <div class="p-6 max-w-[100%] mx-auto">
+            
+            <div id="view-dashboard" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="stat-card border-l-4 border-blue-600">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Booking</p>
+                            <h3 class="text-3xl font-black text-slate-800" id="stat-total">0</h3>
+                        </div>
+                        <div class="icon-box bg-blue-50 text-blue-600"><i class="fas fa-layer-group"></i></div>
+                    </div>
+                    <div class="stat-card border-l-4 border-red-500">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Menunggu Konfirmasi</p>
+                            <h3 class="text-3xl font-black text-red-600" id="stat-pending">0</h3>
+                        </div>
+                        <div class="icon-box bg-red-50 text-red-600"><i class="fas fa-hourglass-half animate-pulse"></i></div>
+                    </div>
+                    <div class="stat-card border-l-4 border-emerald-500">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Terkonfirmasi</p>
+                            <h3 class="text-3xl font-black text-emerald-600" id="stat-confirmed">0</h3>
+                        </div>
+                        <div class="icon-box bg-emerald-50 text-emerald-600"><i class="fas fa-calendar-check"></i></div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="relative w-full md:w-[350px]">
+                        <i class="fas fa-search absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari DN, Vendor, Unit, Driver..." class="pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg w-full text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase transition">
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button id="btn-delete-bulk" onclick="deleteSelected()" disabled class="bg-red-500 text-white px-4 py-2.5 rounded-lg text-[10px] font-bold hover:bg-red-600 transition shadow flex items-center gap-2 disabled:bg-slate-200 disabled:text-slate-400">
+                            <i class="fas fa-trash-alt"></i> HAPUS (<span id="selected-count">0</span>)
+                        </button>
+
+                        <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition shadow flex items-center gap-2">
+                            <i class="fas fa-file-excel"></i> EXCEL
+                        </button>
+
+                        
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="overflow-x-auto">
+                        <table class="w-full" id="monitoringTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><input type="checkbox" id="checkAll" onclick="toggleSelectAll()"></th>
+                                    <th style="width: 35px;">NO</th>
+                                    <th style="width: 80px;">CREATED</th>
+                                    <th style="width: 120px;">NO DN</th>
+                                    <th style="width: 150px;">CUSTOMER</th>
+                                    <th style="width: 80px;">KOTA</th>
+                                    <th style="width: 60px;">QTY<br>(TON)</th>
+                                    <th style="width: 80px;">UNIT</th>
+                                    <th style="width: 100px;">VENDOR</th>
+                                    <th style="width: 120px;">NOPOL &<br>DRIVER</th>
+                                    <th style="width: 100px;">STUFFING<br>(DATE)</th>
+                                    <th style="width: 100px;">BONGKAR<br>(DATE)</th>
+                                    <th style="width: 50px;">EDIT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-input" class="hidden max-w-6xl mx-auto space-y-6">
+                
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-blue-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm"><i class="fas fa-file-import text-blue-600"></i> A. IMPORT DATA SAP (MASSAL)</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">AUTO VENDOR (OPSIONAL)</label>
+                                <input type="text" id="input-vendor-batch" class="form-input" placeholder="ISI JIKA 1 BATCH = 1 VENDOR">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">AUTO UNIT (OPSIONAL)</label>
+                                <input type="text" id="input-unit-batch" class="form-input" placeholder="ISI JIKA UNIT SAMA SEMUA">
+                            </div>
+                        </div>
+                        <div>
+                             <textarea id="paste-area" class="w-full h-32 p-3 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none shadow-inner bg-slate-50 text-slate-700 uppercase" placeholder="PASTE DATA DARI SAP/EXCEL DISINI..."></textarea>
+                        </div>
+                        <div class="flex justify-end">
+                            <button onclick="processPaste()" class="px-6 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg transition uppercase flex items-center gap-2">
+                                <i class="fas fa-check-circle"></i> PROSES IMPORT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-emerald-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm"><i class="fas fa-keyboard text-emerald-600"></i> B. INPUT MANUAL (SATU PER SATU)</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div><label class="text-[10px] font-bold text-slate-500 block mb-1">NO DN</label><input id="man-dn" class="form-input"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 block">CUSTOMER</label><input id="man-cust" class="form-input"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 block">KOTA</label><input id="man-kota" class="form-input"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 block">QTY (TON)</label><input type="number" id="man-qty" class="form-input"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div><label class="text-[10px] font-bold text-slate-500 block mb-1">JENIS UNIT</label><input id="man-unit" class="form-input"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 block">VENDOR</label><input id="man-vendor" class="form-input"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 block">NOPOL</label><input id="man-nopol" class="form-input"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 block">DRIVER</label><input id="man-driver" class="form-input"></div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button onclick="showPage('dashboard')" class="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-200 transition uppercase">BATAL</button>
+                            <button onclick="saveManual()" class="px-6 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg transition uppercase flex items-center gap-2">
+                                <i class="fas fa-save"></i> SIMPAN DATA MANUAL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <div class="copyright-footer">
+        2026 Copy Right Ahmad Fauzi - DockPlan System - ALL RIGHTS RESERVED
+    </div>
+
+    <div id="login-screen" class="fixed inset-0 bg-[#0f172a] z-[100] flex items-center justify-center transition-all duration-500">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 border border-slate-600 text-center">
+            <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
+                <i class="fas fa-key text-white text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-1 tracking-tight">DOCKPLAN SYSTEM</h2>
+            <p class="text-[10px] font-bold text-slate-400 mb-6 uppercase tracking-widest">Silakan Login</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 ml-1">USERNAME</label>
+                    <input type="text" id="username-input" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg text-xs font-bold uppercase focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan Username">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 ml-1">PASSWORD</label>
+                    <input type="password" id="password-input" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="******">
+                </div>
+                <button onclick="prosesLogin()" class="w-full py-3 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 transition shadow-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i> MASUK
+                </button>
+            </div>
+            <p class="mt-6 text-[10px] text-slate-400 font-bold">PT. CONTOH LOGISTIK INDONESIA</p>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI FIREBASE (JANGAN DIUBAH) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHs4mqUYjDvdWH-HU0E6PGWsUu4yJG-kk",
+      authDomain: "dockplan-system.firebaseapp.com",
+      projectId: "dockplan-system",
+      storageBucket: "dockplan-system.firebasestorage.app",
+      messagingSenderId: "487876305197",
+      appId: "1:487876305197:web:9a1d642d00f0bdf52fb3a4"
+    };
+
+    // --- MENGHUBUNGKAN KE FIREBASE ---
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(); // Ini pengganti LocalStorage!
+    
+    // Cek koneksi di Console (Hanya untuk memastikan)
+    console.log("Firebase berhasil dihubungkan!");
+
+    // --- SIMPAN DULU ---
+    // (Kode lama getDB dan saveDB biarkan dulu di bawah sini, nanti kita hapus pelan-pelan)
+
+        // --- VARIABEL PENAMPUNG DATA DARI FIREBASE ---
+    let localData = []; 
+
+    // --- DATABASE AKUN (USERNAME & PASSWORD) ---
+    // Daftar User: 1 Admin, 1 Customer, 5 Vendor
+    const DAFTAR_AKUN = {
+        // 1. AKUN ADMIN
+        "FAUZI": { pass: "logistik", role: "ADMIN", nama: "ADMINISTRATOR" },
+
+        // 2. AKUN CUSTOMER (1 Akun)
+        "MGM": { pass: "123mgm", role: "CUSTOMER", nama: "MULIA GRAND" },
+
+        // 3. AKUN VENDOR (5 Akun)
+        "TNJ":   { pass: "tnj123", role: "VENDOR", nama: "TNJ" },
+        "DEWI SRI":   { pass: "dewisri1234", role: "VENDOR", nama: "DEWI SRI" },
+        "SILOG":   { pass: "silog12345", role: "VENDOR", nama: "SILOG" },
+        "TRUKINDO":{ pass: "truk123",  role: "VENDOR", nama: "PT TRUKINDO" },
+        "LANCAR":  { pass: "lancar123", role: "VENDOR", nama: "PT LANCAR TERUS" }
+    };
+
+    // --- VARIABEL GLOBAL UTAMA ---
+    let USER_ROLE = ''; // Menyimpan Role (Admin/Vendor/Customer)
+    let USER_NAME = ''; // Menyimpan Nama PT Asli
+
+    // --- FUNGSI PROSES LOGIN (BARU) ---
+    function prosesLogin() {
+        // 1. Ambil input Username & Password dari HTML
+        // (Pastikan elemen HTML sudah diganti sesuai Langkah 1 sebelumnya)
+        const userIn = document.getElementById('username-input').value.toUpperCase().trim();
+        const passIn = document.getElementById('password-input').value.trim();
+
+        // 2. Cek apakah Username ada di daftar?
+        const akun = DAFTAR_AKUN[userIn];
+
+        if (!akun) {
+            Swal.fire('Gagal', 'Username tidak ditemukan!', 'error');
+            return;
+        }
+
+        // 3. Cek apakah Password benar?
+        if (akun.pass !== passIn) {
+            Swal.fire('Gagal', 'Password Salah!', 'error');
+            return;
+        }
+
+        // --- LOGIN BERHASIL ---
+        USER_ROLE = akun.role;
+        USER_NAME = akun.nama; // Pakai Nama Resmi PT (Bukan ketikan user)
+
+        // Hilangkan Layar Login
+        document.getElementById('login-screen').classList.add('opacity-0', 'pointer-events-none');
+        
+        // Bersihkan input form biar aman
+        document.getElementById('username-input').value = '';
+        document.getElementById('password-input').value = '';
+
+        // Update Tampilan (Sembunyikan Menu Input jika bukan Admin)
+        updateUIByRole();
+        
+        // Filter Tabel (Hanya munculkan data milik PT tersebut)
+        renderTable(); 
+
+        // Sapa User
+        Swal.fire({
+            icon: 'success',
+            title: `Selamat Datang`,
+            text: `${USER_NAME} (${USER_ROLE})`,
+            timer: 1500, showConfirmButton: false
+        });
+    }
+
+    // --- FUNGSI LOGOUT / KELUAR ---
+    function logout() {
+        Swal.fire({
+            title: 'Keluar Aplikasi?',
+            text: "Anda harus login ulang nanti.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'YA, KELUAR',
+            confirmButtonColor: '#ef4444'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Munculkan lagi layar login
+                document.getElementById('login-screen').classList.remove('opacity-0', 'pointer-events-none');
+                
+                // Reset Variabel Hak Akses
+                USER_ROLE = '';
+                USER_NAME = '';
+                
+                // Kosongkan tabel sementara biar bersih
+                document.getElementById('table-body').innerHTML = '';
+            }
+        });
+    }
+
+    // --- FUNGSI ATUR TAMPILAN MENU ---
+    function updateUIByRole() {
+        // Default: Sembunyikan tombol sensitif
+        const btnInput = document.getElementById('menu-input');
+        const btnDelete = document.getElementById('btn-delete-bulk');
+        const btnReset = document.querySelector('button[onclick="resetData()"]'); // Tombol Reset di sidebar
+
+        if (USER_ROLE === 'ADMIN') {
+            // Admin: Buka Semua
+            if(btnInput) btnInput.style.display = 'flex';
+            if(btnDelete) btnDelete.style.display = 'flex';
+            if(btnReset) btnReset.style.display = 'flex';
+        } else {
+            // Vendor/Customer: Tutup Menu Input & Hapus
+            if(btnInput) btnInput.style.display = 'none';
+            if(btnDelete) btnDelete.style.display = 'none'; // Sembunyikan tombol hapus
+            if(btnReset) btnReset.style.display = 'none'; // Sembunyikan reset
+        }
+    }
+
+    // 1. FUNGSI "MATA-MATA" (LISTENER)
+    // Ini akan stand by 24 jam. Kalau ada data masuk ke Firebase, 
+    // dia otomatis update tabel di layar Anda.
+    db.collection("bookings").orderBy("created", "desc").onSnapshot((snapshot) => {
+        localData = []; // Bersihkan penampung
+        snapshot.forEach((doc) => {
+            let data = doc.data();
+            data.id = doc.id; // Simpan ID unik dari Google
+            localData.push(data);
+        });
+        renderTable(); // Gambar ulang tabel
+        updateStats(); // Update angka statistik
+        console.log("Data berhasil ditarik dari Google!");
+    });
+
+    // 2. FUNGSI GET DATA (MODIFIKASI)
+    // Kita buat getDB tetap ada biar kodingan lain tidak error,
+    // tapi isinya kita arahkan ke variabel localData di atas.
+    function getDB() { return localData; }
+
+    // 3. FUNGSI SAVE MANUAL (BARU)
+    // Ini menggantikan cara simpan lama. Langsung kirim ke Awan (Cloud).
+    function saveManual() {
+        const dn = document.getElementById('man-dn').value.toUpperCase();
+        const cust = document.getElementById('man-cust').value.toUpperCase();
+        
+        if(!dn || !cust) {
+            Swal.fire('Data Kurang', 'No DN dan Customer Wajib Diisi', 'warning');
+            return;
+        }
+
+        // Kirim ke Firebase
+        db.collection("bookings").add({
+            created: new Date().toISOString(),
+            dn: dn,
+            customer: cust,
+            kota: document.getElementById('man-kota').value.toUpperCase(),
+            qty: parseFloat(document.getElementById('man-qty').value) || 0,
+            unit: document.getElementById('man-unit').value.toUpperCase(),
+            vendor: document.getElementById('man-vendor').value.toUpperCase(),
+            nopol: document.getElementById('man-nopol').value.toUpperCase(),
+            driver: document.getElementById('man-driver').value.toUpperCase(),
+            stuffing: '', 
+            bongkar: '', 
+            isGb: false
+        }).then(() => {
+            // Kalau sukses:
+            ['man-dn','man-cust','man-kota','man-qty','man-unit','man-vendor','man-nopol','man-driver'].forEach(id => document.getElementById(id).value = '');
+            Swal.fire({icon: 'success', title: 'Tersimpan ke Google!', timer: 1000, showConfirmButton: false});
+            showPage('dashboard');
+        }).catch((error) => {
+            console.error("Error saving document: ", error);
+            Swal.fire('Error', 'Gagal menyimpan data: ' + error.message, 'error');
+        });
+    }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('main-content').classList.toggle('expanded');
+        }
+
+        window.showPage = function(pageId) {
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-input').classList.add('hidden');
+            document.getElementById('menu-dashboard').classList.remove('active');
+            document.getElementById('menu-input').classList.remove('active');
+            
+            document.getElementById(`view-${pageId}`).classList.remove('hidden');
+            document.getElementById(`menu-${pageId}`).classList.add('active');
+            
+            if(pageId === 'dashboard') {
+                document.getElementById('page-subtitle').innerText = 'MONITORING OVERVIEW';
+                renderTable();
+                updateStats();
+            } else {
+                document.getElementById('page-subtitle').innerText = 'DATA ENTRY';
+                // Reset Fields
+                document.getElementById('input-vendor-batch').value = ''; 
+                document.getElementById('paste-area').value = '';
+            }
+        }
+
+        // --- CHECKBOX LOGIC ---
+        window.toggleSelectAll = function() {
+            const isChecked = document.getElementById('checkAll').checked;
+            document.querySelectorAll('.row-chk').forEach(cb => cb.checked = isChecked);
+            updateDeleteButton();
+        }
+
+        window.updateDeleteButton = function() {
+            const checkedCount = document.querySelectorAll('.row-chk:checked').length;
+            document.getElementById('selected-count').innerText = checkedCount;
+            document.getElementById('btn-delete-bulk').disabled = checkedCount === 0;
+        }
+
+        // --- FITUR HAPUS DATA (VERSI GOOGLE FIREBASE) ---
+        window.deleteSelected = function() {
+            // 1. Ambil semua kotak yang dicentang
+            const checkboxes = document.querySelectorAll('.row-chk:checked');
+            
+            // Kalau tidak ada yang dicentang, stop
+            if(checkboxes.length === 0) return;
+
+            // 2. Konfirmasi Hapus
+            Swal.fire({
+                title: `Hapus ${checkboxes.length} Data?`,
+                text: "Data akan hilang selamanya dari server Google!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'YA, HAPUS',
+                confirmButtonColor: '#ef4444',
+                cancelButtonText: 'Batal'
+            }).then((res) => {
+                if(res.isConfirmed) {
+                    // Tampilkan loading sebentar
+                    Swal.fire({title: 'Sedang Menghapus...', didOpen: () => Swal.showLoading()});
+
+                    const batch = db.batch(); // Pakai mode "Batch" biar cepat
+                    
+                    checkboxes.forEach((cb) => {
+                        const docId = cb.value; // Ambil ID unik dari Google
+                        // Perintah hapus ke database
+                        const docRef = db.collection("bookings").doc(docId);
+                        batch.delete(docRef);
+                    });
+
+                    // 3. Eksekusi Hapus
+                    batch.commit().then(() => {
+                        // Sukses
+                        Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+                        document.getElementById('checkAll').checked = false;
+                        updateDeleteButton(); // Matikan tombol hapus
+                    }).catch((error) => {
+                        // Gagal
+                        console.error("Gagal hapus:", error);
+                        Swal.fire('Error', 'Gagal menghapus data: ' + error.message, 'error');
+                    });
+                }
+            });
+        }
+
+        // --- EXPORT EXCEL ---
+        window.exportToExcel = function() {
+            let db = getDB();
+            if(db.length === 0) { Swal.fire('Data Kosong', 'Tidak ada data untuk diexport', 'warning'); return; }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "NO,CREATED,DN,CUSTOMER,KOTA,QTY,UNIT,VENDOR,NOPOL,DRIVER,TGL STUFFING,TGL BONGKAR\n";
+            
+            db.forEach((item, index) => {
+                const created = new Date(item.created).toLocaleDateString('id-ID');
+                const cust = item.customer.replace(/,/g, " ");
+                const row = [
+                    index + 1,
+                    created,
+                    `'${item.dn}`,
+                    cust,
+                    item.kota,
+                    item.qty,
+                    item.unit,
+                    item.vendor,
+                    item.nopol,
+                    item.driver,
+                    item.stuffing || '-',
+                    item.bongkar || '-'
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `DOCKPLAN_DATA_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- INPUT MANUAL LOGIC ---
+        function saveManual() {
+        const dn = document.getElementById('man-dn').value.toUpperCase();
+        const cust = document.getElementById('man-cust').value.toUpperCase();
+        
+        if(!dn || !cust) {
+            Swal.fire('Data Kurang', 'No DN dan Customer Wajib Diisi', 'warning');
+            return;
+        }
+
+        // 1. LANGSUNG KIRIM KE GOOGLE (Tanpa Loading)
+        db.collection("bookings").add({
+            created: new Date().toISOString(),
+            dn: dn,
+            customer: cust,
+            kota: document.getElementById('man-kota').value.toUpperCase(),
+            qty: parseFloat(document.getElementById('man-qty').value) || 0,
+            unit: document.getElementById('man-unit').value.toUpperCase(),
+            vendor: document.getElementById('man-vendor').value.toUpperCase(),
+            nopol: document.getElementById('man-nopol').value.toUpperCase(),
+            driver: document.getElementById('man-driver').value.toUpperCase(),
+            stuffing: '', 
+            bongkar: '', 
+            isGb: false
+        }).catch((error) => {
+            // Kalau error baru muncul notif (tapi jarang terjadi)
+            console.error("Gagal simpan:", error);
+            Swal.fire('Error', 'Koneksi bermasalah, data mungkin tidak tersimpan.', 'error');
+        });
+
+        // 2. LANGSUNG BERSIHKAN FORM DETIK ITU JUGA
+        ['man-dn','man-cust','man-kota','man-qty','man-unit','man-vendor','man-nopol','man-driver'].forEach(id => document.getElementById(id).value = '');
+
+        // 3. LANGSUNG PINDAH HALAMAN
+        // Muncul notif kecil saja di pojok (Toast) biar tidak mengganggu
+        const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, timerProgressBar: true
+        });
+        Toast.fire({ icon: 'success', title: 'Data diproses...' });
+        
+        showPage('dashboard');
+    }
+
+        // --- SAP PROCESSING ---
+        function processPaste() {
+        const rawText = document.getElementById('paste-area').value;
+        const vendorBatch = document.getElementById('input-vendor-batch').value.toUpperCase().trim();
+        const unitBatch = document.getElementById('input-unit-batch').value.toUpperCase().trim();
+        const inputTime = new Date().toISOString(); 
+
+        if(!rawText.trim()) { Swal.fire('Data Kosong', 'Silakan paste data dulu', 'warning'); return; }
+
+        // --- PARSING DATA ---
+        const lines = rawText.trim().split('\n');
+        const groupedData = {}; 
+        let singleDataList = [];
+
+        lines.forEach((line, index) => {
+            if(!line.trim()) return;
+            const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+            if(cols.length < 7) return; 
+
+            const dn = cols[1];
+            const customer = cols[3];
+            const kota = cols[4];
+            let qtyRaw = cols[5].replace(/,/g, ''); 
+            let qty = parseFloat(qtyRaw);
+            let cleanUnit = unitBatch || '-';
+            if(!unitBatch && cols[7]) cleanUnit = cols[7].split(/[ ;.,]/)[0].toUpperCase();
+
+            const gbMatch = line.toUpperCase().match(/GB\s*(\d+)/);
+            
+            const entry = {
+                created: inputTime,
+                dn: dn,
+                customer: customer,
+                kota: kota,
+                qty: qty, 
+                unit: cleanUnit,
+                vendor: vendorBatch || '', 
+                nopol: '', driver: '', stuffing: '', bongkar: '',
+                isGb: false
+            };
+
+            if (gbMatch) {
+                const gbCode = "GB" + gbMatch[1]; 
+                if (!groupedData[gbCode]) {
+                    groupedData[gbCode] = { ...entry }; 
+                    groupedData[gbCode].dn = [entry.dn]; 
+                } else {
+                    groupedData[gbCode].qty += entry.qty; 
+                    if (!groupedData[gbCode].dn.includes(entry.dn)) {
+                        groupedData[gbCode].dn.push(entry.dn); 
+                    }
+                }
+            } else {
+                singleDataList.push(entry);
+            }
+        });
+
+        const finalMergedList = [];
+        for (const key in groupedData) {
+            const item = groupedData[key];
+            item.dn = item.dn.join(', '); 
+            finalMergedList.push(item);
+        }
+        const allNewData = [...finalMergedList, ...singleDataList];
+
+        // --- UPLOAD BACKGROUND (Tanpa Loading) ---
+        if(allNewData.length > 0) {
+            const batch = db.batch();
+            allNewData.forEach((item) => {
+                const docRef = db.collection("bookings").doc();
+                batch.set(docRef, item);
+            });
+
+            // Kirim data di background, jangan ditungguin
+            batch.commit().catch(err => console.error("Gagal batch:", err));
+
+            // LANGSUNG PINDAH TAMPILAN
+            document.getElementById('paste-area').value = '';
+            document.getElementById('input-vendor-batch').value = '';
+            
+            // Notif kecil saja
+            const Toast = Swal.mixin({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true
+            });
+            Toast.fire({ icon: 'success', title: `${allNewData.length} Data diproses...` });
+
+            showPage('dashboard');
+
+        } else {
+            Swal.fire('Gagal', 'Format data tidak sesuai.', 'error');
+        }
+    }
+
+        // --- RENDER TABLE ---
+        // --- FUNGSI RENDER TABEL (VERSI FIX TOMBOL EDIT) ---
+        function renderTable() {
+            // Ambil text pencarian
+            const filter = document.getElementById('searchInput').value.toUpperCase();
+            
+            // 1. Ambil data dari penampung lokal (localData)
+            let db = localData;
+
+            // --- [BAGIAN BARU] FILTER DATA BERDASARKAN SIAPA YANG LOGIN ---
+            if (USER_ROLE === 'CUSTOMER') {
+                // Jika Customer: Hanya tampilkan data yang nama Customernya SAMA dengan USER_NAME
+                // (Menggunakan .includes agar pencarian tidak harus 100% persis, misal "PT INDAH" bisa baca "INDAH KIAT")
+                db = db.filter(item => item.customer && item.customer.includes(USER_NAME));
+            } 
+            else if (USER_ROLE === 'VENDOR') {
+                // Jika Vendor: Hanya tampilkan data yang Vendornya SAMA dengan USER_NAME
+                db = db.filter(item => item.vendor && item.vendor.includes(USER_NAME));
+            }
+            // Jika ADMIN: Tidak ada filter (db tetap utuh / lihat semua)
+            // -------------------------------------------------------------
+
+            // 2. Logika Filter Pencarian (Search Box)
+            if(filter) {
+                db = db.filter(i => 
+                    (i.dn && i.dn.includes(filter)) || 
+                    (i.customer && i.customer.toUpperCase().includes(filter)) ||
+                    (i.kota && i.kota.toUpperCase().includes(filter)) ||
+                    (i.unit && i.unit.toUpperCase().includes(filter)) ||
+                    (i.vendor && i.vendor.toUpperCase().includes(filter)) ||
+                    (i.nopol && i.nopol.toUpperCase().includes(filter)) ||
+                    (i.driver && i.driver.toUpperCase().includes(filter))
+                );
+            }
+
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            document.getElementById('checkAll').checked = false;
+            updateDeleteButton();
+
+            // Jika Data Kosong
+            if(db.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="py-16 text-slate-400 italic font-bold">DATA KOSONG / TIDAK DITEMUKAN</td></tr>`;
+                return;
+            }
+
+            // Loop Data
+            db.forEach((item, idx) => {
+                const dCreated = new Date(item.created);
+                const showCreated = `${dCreated.getDate()}/${dCreated.getMonth()+1} ${String(dCreated.getHours()).padStart(2,'0')}:${String(dCreated.getMinutes()).padStart(2,'0')}`;
+
+                const formatJadwal = (val) => {
+                    if(!val) return '<span class="status-waiting">MENUNGGU<br>KONFIRMASI</span>';
+                    const d = new Date(val);
+                    const months = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+                    return `<div class="text-blue-800 text-[11px]">${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}</div>`;
+                };
+
+                const displayQty = Math.round(item.qty).toLocaleString('id-ID');
+
+                const row = `
+                    <tr class="transition group border-b border-slate-300 hover:bg-slate-100">
+                        <td><input type="checkbox" class="row-chk" value="${item.id}" onclick="updateDeleteButton()"></td>
+                        <td class="bg-slate-50 font-bold text-slate-500">${idx + 1}</td>
+                        <td class="font-bold text-slate-600 bg-slate-50 text-[9px] leading-tight">${showCreated}</td>
+                        <td class="font-bold text-blue-700 break-words text-[10px] leading-tight">${item.dn}</td>
+                        <td class="font-bold text-slate-700 leading-tight">${item.customer}</td>
+                        <td class="text-slate-600 font-bold">${item.kota}</td>
+                        <td class="font-black text-slate-700 bg-slate-50">${displayQty}</td>
+                        <td class="font-bold text-slate-700">${item.unit}</td>
+                        <td class="font-bold text-slate-600">${item.vendor || '-'}</td>
+                        
+                        <td class="bg-slate-50">
+                            <div class="font-black text-slate-800 border-b border-slate-300 pb-1 mb-1">${item.nopol || '-'}</div>
+                            <div class="font-bold text-slate-500 text-[9px]">${item.driver || '-'}</div>
+                        </td>
+
+                        <td class="bg-yellow-50 border-x border-slate-300">${formatJadwal(item.stuffing)}</td>
+                        <td class="bg-green-50 border-r border-slate-300">${formatJadwal(item.bongkar)}</td>
+                        <td>
+                            <div class="flex justify-center gap-1">
+                                <button onclick="editItem('${item.id}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-100 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function updateStats() {
+            const db = getDB();
+            const total = db.length;
+            const confirmed = db.filter(i => i.stuffing && i.bongkar).length;
+            const pending = total - confirmed;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-confirmed').innerText = confirmed;
+        }
+
+        // --- FITUR EDIT DATA (VERSI GOOGLE FIREBASE) ---
+        // --- FITUR EDIT PINTAR (SESUAI LOGIN) ---
+    async function editItem(id) {
+        const item = localData.find(i => i.id === id);
+        if(!item) return;
+
+        // Tentukan mana yang boleh diedit
+        let readOnlyAll = ''; 
+        let disableBongkar = 'disabled';
+        let disableNopol = 'disabled';
+
+        if (USER_ROLE === 'ADMIN') {
+            disableBongkar = ''; // Admin bisa semua
+            disableNopol = '';
+        } else if (USER_ROLE === 'CUSTOMER') {
+            readOnlyAll = 'readonly disabled class="form-input bg-slate-100 text-slate-400 cursor-not-allowed"'; // Matikan semua teks
+            disableBongkar = ''; // TAPI Buka Tanggal Bongkar
+        } else if (USER_ROLE === 'VENDOR') {
+            readOnlyAll = 'readonly disabled class="form-input bg-slate-100 text-slate-400 cursor-not-allowed"'; // Matikan semua
+            disableNopol = ''; // TAPI Buka Nopol & Driver
+        }
+
+        // Style khusus untuk input yang dimatikan
+        const styleDisabled = 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed';
+
+        // HTML Form Dinamis
+        const { value: formValues } = await Swal.fire({
+            title: `UPDATE DATA ${USER_ROLE}`,
+            width: 700,
+            html: `
+                <div class="grid grid-cols-2 gap-3 text-left mt-2 overflow-y-auto max-h-[70vh] p-1">
+                    
+                    <div class="col-span-2 bg-blue-50 p-2 text-[10px] text-blue-800 font-bold mb-2 rounded border border-blue-200">DATA MUATAN (ADMIN ONLY)</div>
+                    
+                    <div><label class="text-[9px] font-bold text-slate-500 block">NO DN</label>
+                    <input id="sw-dn" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.dn}" ${readOnlyAll}></div>
+                    
+                    <div><label class="text-[9px] font-bold text-slate-500 block">UNIT SAP</label>
+                    <input id="sw-unit" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.unit}" ${readOnlyAll}></div>
+                    
+                    <div class="col-span-2"><label class="text-[9px] font-bold text-slate-500 block">CUSTOMER</label>
+                    <input id="sw-customer" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.customer}" ${readOnlyAll}></div>
+                    
+                    <div><label class="text-[9px] font-bold text-slate-500 block">KOTA</label>
+                    <input id="sw-kota" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.kota}" ${readOnlyAll}></div>
+                    
+                    <div><label class="text-[9px] font-bold text-slate-500 block">QTY</label>
+                    <input id="sw-qty" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.qty}" ${readOnlyAll}></div>
+                    
+                    <div class="col-span-2 bg-slate-100 p-2 text-[10px] text-slate-800 font-bold my-2 rounded border border-slate-200">DATA ARMADA (VENDOR AREA)</div>
+                    
+                    <div><label class="text-[9px] font-bold text-slate-500 block">VENDOR</label>
+                    <input id="sw-vendor" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.vendor}" ${readOnlyAll}></div>
+                    
+                    <div><label class="text-[9px] font-bold text-slate-500 block">NOPOL</label>
+                    <input id="sw-nopol" class="form-input ${disableNopol ? styleDisabled : 'bg-white border-blue-500 ring-2 ring-blue-100'}" value="${item.nopol}" ${disableNopol}></div>
+                    
+                    <div class="col-span-2"><label class="text-[9px] font-bold text-slate-500 block">DRIVER</label>
+                    <input id="sw-driver" class="form-input ${disableNopol ? styleDisabled : 'bg-white border-blue-500 ring-2 ring-blue-100'}" value="${item.driver}" ${disableNopol}></div>
+                    
+                    <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
+                        <label class="text-[9px] font-bold text-yellow-700 block">TGL STUFFING (ADMIN)</label>
+                        <input id="sw-stuffing" type="date" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.stuffing}" ${readOnlyAll}>
+                    </div>
+                    
+                    <div class="bg-green-50 p-2 rounded border border-green-200">
+                        <label class="text-[9px] font-bold text-green-700 block">TGL BONGKAR (CUSTOMER)</label>
+                        <input id="sw-bongkar" type="date" class="form-input ${disableBongkar ? styleDisabled : 'bg-white border-green-500 ring-2 ring-green-100'}" value="${item.bongkar}" ${disableBongkar}>
+                    </div>
+                </div>
+            `,
+            focusConfirm: false, showCancelButton: true, confirmButtonText: 'SIMPAN DATA', confirmButtonColor: '#2563eb',
+            preConfirm: () => {
+                // Saat simpan, kita kembalikan nilai sesuai role
+                // Jika input disabled, kita ambil nilai lama dari 'item' agar tidak kosong/error
+                return {
+                    dn: USER_ROLE==='ADMIN' ? document.getElementById('sw-dn').value.toUpperCase() : item.dn,
+                    unit: USER_ROLE==='ADMIN' ? document.getElementById('sw-unit').value.toUpperCase() : item.unit,
+                    customer: USER_ROLE==='ADMIN' ? document.getElementById('sw-customer').value.toUpperCase() : item.customer,
+                    kota: USER_ROLE==='ADMIN' ? document.getElementById('sw-kota').value.toUpperCase() : item.kota,
+                    qty: USER_ROLE==='ADMIN' ? parseFloat(document.getElementById('sw-qty').value) : item.qty,
+                    vendor: USER_ROLE==='ADMIN' ? document.getElementById('sw-vendor').value.toUpperCase() : item.vendor,
+                    stuffing: USER_ROLE==='ADMIN' ? document.getElementById('sw-stuffing').value : item.stuffing,
+                    
+                    // Vendor & Admin boleh edit ini
+                    nopol: (USER_ROLE==='ADMIN' || USER_ROLE==='VENDOR') ? document.getElementById('sw-nopol').value.toUpperCase() : item.nopol,
+                    driver: (USER_ROLE==='ADMIN' || USER_ROLE==='VENDOR') ? document.getElementById('sw-driver').value.toUpperCase() : item.driver,
+                    
+                    // Customer & Admin boleh edit ini
+                    bongkar: (USER_ROLE==='ADMIN' || USER_ROLE==='CUSTOMER') ? document.getElementById('sw-bongkar').value : item.bongkar
+                }
+            }
+        });
+
+        if (formValues) {
+            Swal.fire({title: 'Menyimpan...', didOpen: () => Swal.showLoading()});
+            db.collection("bookings").doc(id).update(formValues)
+            .then(() => Swal.fire({icon: 'success', title: 'Data Terupdate!', timer: 800, showConfirmButton: false}))
+            .catch((error) => Swal.fire('Gagal', error.message, 'error'));
+        }
+    }
+
+        function resetData() {
+        Swal.fire('Fitur Dimatikan', 'Demi keamanan data Cloud, tombol Reset Global dinonaktifkan.', 'info');
+    }
+        renderTable();
+    </script>
+</body>
+</html>
