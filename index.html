@@ -859,65 +859,114 @@ function logout() {
 
         // --- FITUR EDIT DATA (VERSI GOOGLE FIREBASE) ---
         // --- FITUR EDIT PINTAR (SESUAI LOGIN) ---
-    function editItem(id) {
+    // --- FUNGSI BUKA MODAL EDIT ---
+function editItem(id) {
     const item = localData.find(i => i.id === id);
-    if(!item) return;
+    if (!item) return;
 
-    let updates = {};
-    let info = `DETAIL DATA - Role Anda: ${USER_ROLE}\n` +
-               `----------------------------\n` +
-               `DN: ${item.dn}\n` +
-               `Customer: ${item.customer}\n` +
-               `----------------------------\n`;
+    // 1. Isi Form dengan Data Lama
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-dn').value = item.dn;
+    document.getElementById('edit-cust').value = item.customer;
+    document.getElementById('edit-unit').value = item.unit;
+    document.getElementById('edit-qty').value = item.qty;
+    document.getElementById('edit-kota').value = item.kota;
+    document.getElementById('edit-vendor').value = item.vendor;
+    document.getElementById('edit-nopol').value = item.nopol;
+    document.getElementById('edit-driver').value = item.driver;
+    document.getElementById('edit-stuffing').value = item.stuffing;
+    document.getElementById('edit-bongkar').value = item.bongkar;
 
-    // 1. LOGIKA EDIT UNTUK ADMIN
+    // 2. ATUR PERIZINAN (Siapa Boleh Edit Apa)
+    // Default: Matikan Semua Dulu
+    const allInputs = ['edit-dn','edit-cust','edit-unit','edit-qty','edit-kota','edit-vendor','edit-nopol','edit-driver','edit-stuffing','edit-bongkar'];
+    allInputs.forEach(id => {
+        document.getElementById(id).disabled = true;
+        document.getElementById(id).style.backgroundColor = "#f1f5f9"; // Warna abu-abu
+    });
+
+    // Cek Role
     if (USER_ROLE === 'ADMIN') {
-        const nDn = prompt(info + "Edit NO DN:", item.dn);
-        const nCust = prompt("Edit CUSTOMER:", item.customer);
-        const nQty = prompt("Edit QTY:", item.qty);
-        const nNopol = prompt("Edit NOPOL:", item.nopol);
-        const nDriver = prompt("Edit DRIVER:", item.driver);
-        const nStuffing = prompt("Edit TGL STUFFING (YYYY-MM-DD):", item.stuffing);
-        const nBongkar = prompt("Edit TGL BONGKAR (YYYY-MM-DD):", item.bongkar);
-
-        if(nDn !== null) updates.dn = nDn.toUpperCase();
-        if(nCust !== null) updates.customer = nCust.toUpperCase();
-        if(nQty !== null) updates.qty = parseFloat(nQty) || 0;
-        if(nNopol !== null) updates.nopol = nNopol.toUpperCase();
-        if(nDriver !== null) updates.driver = nDriver.toUpperCase();
-        if(nStuffing !== null) updates.stuffing = nStuffing;
-        if(nBongkar !== null) updates.bongkar = nBongkar;
+        // ADMIN: Buka Semua
+        allInputs.forEach(id => {
+            document.getElementById(id).disabled = false;
+            document.getElementById(id).style.backgroundColor = "white";
+        });
     } 
-    
-    // 2. LOGIKA EDIT UNTUK VENDOR
     else if (USER_ROLE === 'VENDOR') {
-        const nNopol = prompt(info + "Update NOPOL:", item.nopol);
-        const nDriver = prompt("Update DRIVER:", item.driver);
-        
-        if(nNopol !== null) updates.nopol = nNopol.toUpperCase();
-        if(nDriver !== null) updates.driver = nDriver.toUpperCase();
+        // VENDOR: Hanya Nopol & Driver
+        ['edit-nopol', 'edit-driver'].forEach(id => {
+            document.getElementById(id).disabled = false;
+            document.getElementById(id).style.backgroundColor = "white";
+            document.getElementById(id).style.border = "2px solid #3b82f6"; // Highlight Biru
+        });
     } 
-    
-    // 3. LOGIKA EDIT UNTUK CUSTOMER
     else if (USER_ROLE === 'CUSTOMER') {
-        const nBongkar = prompt(info + "Update TGL BONGKAR (YYYY-MM-DD):", item.bongkar);
-        
-        if(nBongkar !== null) updates.bongkar = nBongkar;
-    }
-
-    // PROSES SIMPAN KE FIREBASE
-    if (Object.keys(updates).length > 0) {
-        // Karena Swal.fire (Loading) tidak bisa dipakai, kita pakai notif biasa
-        console.log("Sedang menyimpan ke server...");
-        
-        db.collection("bookings").doc(id).update(updates)
-        .then(() => {
-            alert("Data Berhasil Diperbarui!");
-        })
-        .catch((error) => {
-            alert("Gagal Update: " + error.message);
+        // CUSTOMER: Hanya Tanggal Bongkar
+        ['edit-bongkar'].forEach(id => {
+            document.getElementById(id).disabled = false;
+            document.getElementById(id).style.backgroundColor = "white";
+            document.getElementById(id).style.border = "2px solid #22c55e"; // Highlight Hijau
         });
     }
+
+    // 3. Tampilkan Modal
+    document.getElementById('modal-edit').style.display = 'flex';
+}
+
+// --- FUNGSI TUTUP MODAL ---
+function tutupModal() {
+    document.getElementById('modal-edit').style.display = 'none';
+}
+
+// --- FUNGSI SIMPAN KE FIREBASE ---
+function simpanPerubahan() {
+    const id = document.getElementById('edit-id').value;
+    
+    // Ambil data dari form
+    const updates = {
+        dn: document.getElementById('edit-dn').value.toUpperCase(),
+        customer: document.getElementById('edit-cust').value.toUpperCase(),
+        unit: document.getElementById('edit-unit').value.toUpperCase(),
+        qty: parseFloat(document.getElementById('edit-qty').value) || 0,
+        kota: document.getElementById('edit-kota').value.toUpperCase(),
+        vendor: document.getElementById('edit-vendor').value.toUpperCase(),
+        nopol: document.getElementById('edit-nopol').value.toUpperCase(),
+        driver: document.getElementById('edit-driver').value.toUpperCase(),
+        stuffing: document.getElementById('edit-stuffing').value,
+        bongkar: document.getElementById('edit-bongkar').value
+    };
+
+    // Filter: Jangan simpan field yang di-disabled (biar user nakal gak bisa hack via inspect element)
+    // Tapi karena kita pakai firebase update, kita cukup percaya input yang enabled saja.
+    // Untuk keamanan extra di sisi klien (Client Side):
+    if (USER_ROLE === 'VENDOR') {
+        // Hapus data yang bukan hak vendor dari objek update
+        delete updates.dn; delete updates.customer; delete updates.unit; 
+        delete updates.qty; delete updates.kota; delete updates.vendor; 
+        delete updates.stuffing; delete updates.bongkar;
+    }
+    if (USER_ROLE === 'CUSTOMER') {
+        // Hapus semua kecuali bongkar
+        const bongkarSaja = { bongkar: updates.bongkar };
+        // Timpa updates dengan objek baru
+        // (Cara cepat: kita pakai object updates yg sudah ada tapi kita bersihkan isinya)
+        // Agar aman, kita buat ulang variable updates untuk customer:
+        db.collection("bookings").doc(id).update({ bongkar: updates.bongkar })
+        .then(() => { alert("Jadwal Bongkar Terupdate!"); tutupModal(); })
+        .catch((e) => alert("Error: " + e.message));
+        return; 
+    }
+
+    // Eksekusi Simpan (Admin & Vendor & Generic)
+    db.collection("bookings").doc(id).update(updates)
+    .then(() => {
+        alert("Data Berhasil Disimpan!");
+        tutupModal();
+    })
+    .catch((error) => {
+        alert("Gagal Simpan: " + error.message);
+    });
 }
 
         function resetData() {
@@ -948,5 +997,72 @@ window.onload = function() {
     }
 };
     </script>
+    <div id="modal-edit" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+        
+        <h3 style="margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px;">EDIT DATA</h3>
+        
+        <input type="hidden" id="edit-id">
+
+        <div style="display: grid; gap: 10px;">
+            <div>
+                <label style="font-size: 10px; font-weight: bold; color: #666;">NO DN</label>
+                <input type="text" id="edit-dn" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="font-size: 10px; font-weight: bold; color: #666;">CUSTOMER</label>
+                <input type="text" id="edit-cust" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="font-size: 10px; font-weight: bold; color: #666;">UNIT</label>
+                    <input type="text" id="edit-unit" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="font-size: 10px; font-weight: bold; color: #666;">QTY</label>
+                    <input type="number" id="edit-qty" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+            </div>
+            <div>
+                <label style="font-size: 10px; font-weight: bold; color: #666;">KOTA</label>
+                <input type="text" id="edit-kota" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+
+            <div style="background: #f0f9ff; padding: 10px; border-radius: 4px; border: 1px solid #bae6fd;">
+                <label style="font-size: 10px; font-weight: bold; color: #0284c7; display: block; margin-bottom: 5px;">AREA VENDOR</label>
+                <div>
+                    <label style="font-size: 10px; font-weight: bold; color: #666;">VENDOR NAME</label>
+                    <input type="text" id="edit-vendor" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 5px;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 10px; font-weight: bold; color: #666;">NOPOL</label>
+                        <input type="text" id="edit-nopol" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 10px; font-weight: bold; color: #666;">DRIVER</label>
+                        <input type="text" id="edit-driver" class="form-input" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="background: #fefce8; padding: 5px; border: 1px solid #fef08a;">
+                    <label style="font-size: 10px; font-weight: bold; color: #854d0e;">TGL STUFFING</label>
+                    <input type="date" id="edit-stuffing" class="form-input" style="width: 100%; padding: 5px; border: 1px solid #ccc;">
+                </div>
+                <div style="background: #f0fdf4; padding: 5px; border: 1px solid #bbf7d0;">
+                    <label style="font-size: 10px; font-weight: bold; color: #166534;">TGL BONGKAR</label>
+                    <input type="date" id="edit-bongkar" class="form-input" style="width: 100%; padding: 5px; border: 1px solid #ccc;">
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="tutupModal()" style="padding: 10px 20px; background: #94a3b8; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">BATAL</button>
+            <button onclick="simpanPerubahan()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">SIMPAN DATA</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
