@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
@@ -340,13 +339,15 @@
     const akun = DAFTAR_AKUN[userIn];
 
     if (!akun) {
-        Swal.fire('Gagal', 'Username tidak ditemukan!', 'error');
+        // Ganti Swal dengan alert bawaan browser
+        alert('Gagal: Username tidak ditemukan!');
         return;
     }
 
     // 3. Cek apakah Password benar?
     if (akun.pass !== passIn) {
-        Swal.fire('Gagal', 'Password Salah!', 'error');
+        // Ganti Swal dengan alert bawaan browser
+        alert('Gagal: Password Salah!');
         return;
     }
 
@@ -359,16 +360,11 @@
         nama: akun.nama
     }));
 
-    // Jalankan fungsi masuk (saya sarankan gunakan fungsi terpisah agar bisa dipanggil saat auto-login)
+    // Jalankan fungsi masuk
     masukAplikasi(akun.role, akun.nama);
 
-    // Sapa User
-    Swal.fire({
-        icon: 'success',
-        title: `Selamat Datang`,
-        text: `${akun.nama} (${akun.role})`,
-        timer: 1500, showConfirmButton: false
-    });
+    // Sapa User dengan alert biasa
+    alert(`Selamat Datang, ${akun.nama} (${akun.role})`);
 }
 
 // Fungsi tambahan untuk menangani visual perpindahan halaman
@@ -420,22 +416,11 @@ function masukAplikasi(role, nama) {
     // --- FUNGSI LOGOUT / KELUAR ---
     // --- POINT 4: LOGOUT & HAPUS SESI (UPDATE) ---
 function logout() {
-    Swal.fire({
-        title: 'Keluar Aplikasi?',
-        text: "Anda harus login ulang nanti.",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'YA, KELUAR',
-        confirmButtonColor: '#ef4444'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // 1. Hapus data sesi dari LocalStorage agar tidak auto-login lagi
-            localStorage.removeItem('dockplan_session');
-            
-            // 2. Muat ulang halaman untuk membersihkan variabel dan kembali ke layar login
-            location.reload();
-        }
-    });
+    // Menggunakan confirm bawaan browser (Anti-Blokir)
+    if (confirm("Keluar Aplikasi? Anda harus login ulang nanti.")) {
+        localStorage.removeItem('dockplan_session');
+        location.reload();
+    }
 }
 
     // --- FUNGSI ATUR TAMPILAN MENU ---
@@ -555,49 +540,39 @@ function logout() {
 
         // --- FITUR HAPUS DATA (VERSI GOOGLE FIREBASE) ---
         window.deleteSelected = function() {
-            // 1. Ambil semua kotak yang dicentang
-            const checkboxes = document.querySelectorAll('.row-chk:checked');
-            
-            // Kalau tidak ada yang dicentang, stop
-            if(checkboxes.length === 0) return;
+    // 1. Ambil semua kotak yang dicentang
+    const checkboxes = document.querySelectorAll('.row-chk:checked');
+    
+    // Kalau tidak ada yang dicentang, stop
+    if(checkboxes.length === 0) return;
 
-            // 2. Konfirmasi Hapus
-            Swal.fire({
-                title: `Hapus ${checkboxes.length} Data?`,
-                text: "Data akan hilang selamanya dari server Google!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'YA, HAPUS',
-                confirmButtonColor: '#ef4444',
-                cancelButtonText: 'Batal'
-            }).then((res) => {
-                if(res.isConfirmed) {
-                    // Tampilkan loading sebentar
-                    Swal.fire({title: 'Sedang Menghapus...', didOpen: () => Swal.showLoading()});
+    // 2. Konfirmasi Hapus menggunakan window.confirm (Anti-Blokir)
+    if (confirm(`Hapus ${checkboxes.length} Data?\nData akan hilang selamanya dari server Google!`)) {
+        
+        // Karena Swal (Loading) tidak bisa jalan, kita beri log di console
+        console.log("Sedang menghapus data...");
 
-                    const batch = db.batch(); // Pakai mode "Batch" biar cepat
-                    
-                    checkboxes.forEach((cb) => {
-                        const docId = cb.value; // Ambil ID unik dari Google
-                        // Perintah hapus ke database
-                        const docRef = db.collection("bookings").doc(docId);
-                        batch.delete(docRef);
-                    });
+        const batch = db.batch(); // Pakai mode "Batch" biar cepat
+        
+        checkboxes.forEach((cb) => {
+            const docId = cb.value; // Ambil ID unik dari Google
+            const docRef = db.collection("bookings").doc(docId);
+            batch.delete(docRef);
+        });
 
-                    // 3. Eksekusi Hapus
-                    batch.commit().then(() => {
-                        // Sukses
-                        Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
-                        document.getElementById('checkAll').checked = false;
-                        updateDeleteButton(); // Matikan tombol hapus
-                    }).catch((error) => {
-                        // Gagal
-                        console.error("Gagal hapus:", error);
-                        Swal.fire('Error', 'Gagal menghapus data: ' + error.message, 'error');
-                    });
-                }
-            });
-        }
+        // 3. Eksekusi Hapus
+        batch.commit().then(() => {
+            // Sukses - Menggunakan alert bawaan
+            alert("Data berhasil dihapus.");
+            document.getElementById('checkAll').checked = false;
+            updateDeleteButton(); // Matikan tombol hapus
+        }).catch((error) => {
+            // Gagal
+            console.error("Gagal hapus:", error);
+            alert("Error: Gagal menghapus data: " + error.message);
+        });
+    }
+}
 
         // --- EXPORT EXCEL ---
         window.exportToExcel = function() {
@@ -681,96 +656,103 @@ function logout() {
 
         // --- SAP PROCESSING ---
         function processPaste() {
-        const rawText = document.getElementById('paste-area').value;
-        const vendorBatch = document.getElementById('input-vendor-batch').value.toUpperCase().trim();
-        const unitBatch = document.getElementById('input-unit-batch').value.toUpperCase().trim();
-        const inputTime = new Date().toISOString(); 
+    const rawText = document.getElementById('paste-area').value;
+    const vendorBatch = document.getElementById('input-vendor-batch').value.toUpperCase().trim();
+    const unitBatch = document.getElementById('input-unit-batch').value.toUpperCase().trim();
+    const inputTime = new Date().toISOString();
 
-        if(!rawText.trim()) { Swal.fire('Data Kosong', 'Silakan paste data dulu', 'warning'); return; }
+    // Ganti Swal.fire dengan alert biasa
+    if(!rawText.trim()) { 
+        alert('Data Kosong: Silakan paste data dulu');
+        return; 
+    }
 
-        // --- PARSING DATA ---
-        const lines = rawText.trim().split('\n');
-        const groupedData = {}; 
-        let singleDataList = [];
+    // --- PARSING DATA ---
+    const lines = rawText.trim().split('\n');
+    const groupedData = {};
+    let singleDataList = [];
 
-        lines.forEach((line, index) => {
-            if(!line.trim()) return;
-            const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
-            if(cols.length < 7) return; 
+    lines.forEach((line, index) => {
+        if(!line.trim()) return;
+        const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+        if(cols.length < 7) return;
 
-            const dn = cols[1];
-            const customer = cols[3];
-            const kota = cols[4];
-            let qtyRaw = cols[5].replace(/,/g, ''); 
-            let qty = parseFloat(qtyRaw);
-            let cleanUnit = unitBatch || '-';
-            if(!unitBatch && cols[7]) cleanUnit = cols[7].split(/[ ;.,]/)[0].toUpperCase();
+        const dn = cols[1];
+        const customer = cols[3];
+        const kota = cols[4];
+        let qtyRaw = cols[5].replace(/,/g, '');
+        let qty = parseFloat(qtyRaw);
+        let cleanUnit = unitBatch || '-';
+        if(!unitBatch && cols[7]) cleanUnit = cols[7].split(/[ ;.,]/)[0].toUpperCase();
 
-            const gbMatch = line.toUpperCase().match(/GB\s*(\d+)/);
-            
-            const entry = {
-                created: inputTime,
-                dn: dn,
-                customer: customer,
-                kota: kota,
-                qty: qty, 
-                unit: cleanUnit,
-                vendor: vendorBatch || '', 
-                nopol: '', driver: '', stuffing: '', bongkar: '',
-                isGb: false
-            };
+        const gbMatch = line.toUpperCase().match(/GB\s*(\d+)/);
+        
+        const entry = {
+            created: inputTime,
+            dn: dn,
+            customer: customer,
+            kota: kota,
+            qty: qty, 
+            unit: cleanUnit,
+            vendor: vendorBatch || '', 
+            nopol: '', driver: '', stuffing: '', bongkar: '',
+            isGb: false
+        };
 
-            if (gbMatch) {
-                const gbCode = "GB" + gbMatch[1]; 
-                if (!groupedData[gbCode]) {
-                    groupedData[gbCode] = { ...entry }; 
-                    groupedData[gbCode].dn = [entry.dn]; 
-                } else {
-                    groupedData[gbCode].qty += entry.qty; 
-                    if (!groupedData[gbCode].dn.includes(entry.dn)) {
-                        groupedData[gbCode].dn.push(entry.dn); 
-                    }
-                }
+        if (gbMatch) {
+            const gbCode = "GB" + gbMatch[1];
+            if (!groupedData[gbCode]) {
+                groupedData[gbCode] = { ...entry };
+                groupedData[gbCode].dn = [entry.dn];
             } else {
-                singleDataList.push(entry);
+                groupedData[gbCode].qty += entry.qty;
+                if (!groupedData[gbCode].dn.includes(entry.dn)) {
+                    groupedData[gbCode].dn.push(entry.dn);
+                }
             }
+        } else {
+            singleDataList.push(entry);
+        }
+    });
+
+    const finalMergedList = [];
+    for (const key in groupedData) {
+        const item = groupedData[key];
+        item.dn = item.dn.join(', ');
+        finalMergedList.push(item);
+    }
+    const allNewData = [...finalMergedList, ...singleDataList];
+
+    // --- UPLOAD BACKGROUND ---
+    if(allNewData.length > 0) {
+        const batch = db.batch();
+        allNewData.forEach((item) => {
+            const docRef = db.collection("bookings").doc();
+            batch.set(docRef, item);
         });
 
-        const finalMergedList = [];
-        for (const key in groupedData) {
-            const item = groupedData[key];
-            item.dn = item.dn.join(', '); 
-            finalMergedList.push(item);
-        }
-        const allNewData = [...finalMergedList, ...singleDataList];
-
-        // --- UPLOAD BACKGROUND (Tanpa Loading) ---
-        if(allNewData.length > 0) {
-            const batch = db.batch();
-            allNewData.forEach((item) => {
-                const docRef = db.collection("bookings").doc();
-                batch.set(docRef, item);
+        batch.commit()
+            .then(() => {
+                console.log("Upload berhasil ke Firebase.");
+            })
+            .catch(err => {
+                console.error("Gagal batch:", err);
+                alert("Gagal mengirim data ke server: " + err.message);
             });
 
-            // Kirim data di background, jangan ditungguin
-            batch.commit().catch(err => console.error("Gagal batch:", err));
+        // LANGSUNG PINDAH TAMPILAN
+        document.getElementById('paste-area').value = '';
+        document.getElementById('input-vendor-batch').value = '';
+        
+        // Ganti Toast Swal dengan alert sederhana
+        alert(`${allNewData.length} Data berhasil diproses ke server.`);
 
-            // LANGSUNG PINDAH TAMPILAN
-            document.getElementById('paste-area').value = '';
-            document.getElementById('input-vendor-batch').value = '';
-            
-            // Notif kecil saja
-            const Toast = Swal.mixin({
-                toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true
-            });
-            Toast.fire({ icon: 'success', title: `${allNewData.length} Data diproses...` });
+        showPage('dashboard');
 
-            showPage('dashboard');
-
-        } else {
-            Swal.fire('Gagal', 'Format data tidak sesuai.', 'error');
-        }
+    } else {
+        alert('Gagal: Format data tidak sesuai.');
     }
+}
 
         // --- RENDER TABLE ---
         // --- FUNGSI RENDER TABEL (VERSI FIX TOMBOL EDIT) ---
@@ -877,105 +859,66 @@ function logout() {
 
         // --- FITUR EDIT DATA (VERSI GOOGLE FIREBASE) ---
         // --- FITUR EDIT PINTAR (SESUAI LOGIN) ---
-    async function editItem(id) {
-        const item = localData.find(i => i.id === id);
-        if(!item) return;
+    function editItem(id) {
+    const item = localData.find(i => i.id === id);
+    if(!item) return;
 
-        // Tentukan mana yang boleh diedit
-        let readOnlyAll = ''; 
-        let disableBongkar = 'disabled';
-        let disableNopol = 'disabled';
+    let updates = {};
+    let info = `DETAIL DATA - Role Anda: ${USER_ROLE}\n` +
+               `----------------------------\n` +
+               `DN: ${item.dn}\n` +
+               `Customer: ${item.customer}\n` +
+               `----------------------------\n`;
 
-        if (USER_ROLE === 'ADMIN') {
-            disableBongkar = ''; // Admin bisa semua
-            disableNopol = '';
-        } else if (USER_ROLE === 'CUSTOMER') {
-            readOnlyAll = 'readonly disabled class="form-input bg-slate-100 text-slate-400 cursor-not-allowed"'; // Matikan semua teks
-            disableBongkar = ''; // TAPI Buka Tanggal Bongkar
-        } else if (USER_ROLE === 'VENDOR') {
-            readOnlyAll = 'readonly disabled class="form-input bg-slate-100 text-slate-400 cursor-not-allowed"'; // Matikan semua
-            disableNopol = ''; // TAPI Buka Nopol & Driver
-        }
+    // 1. LOGIKA EDIT UNTUK ADMIN
+    if (USER_ROLE === 'ADMIN') {
+        const nDn = prompt(info + "Edit NO DN:", item.dn);
+        const nCust = prompt("Edit CUSTOMER:", item.customer);
+        const nQty = prompt("Edit QTY:", item.qty);
+        const nNopol = prompt("Edit NOPOL:", item.nopol);
+        const nDriver = prompt("Edit DRIVER:", item.driver);
+        const nStuffing = prompt("Edit TGL STUFFING (YYYY-MM-DD):", item.stuffing);
+        const nBongkar = prompt("Edit TGL BONGKAR (YYYY-MM-DD):", item.bongkar);
 
-        // Style khusus untuk input yang dimatikan
-        const styleDisabled = 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed';
-
-        // HTML Form Dinamis
-        const { value: formValues } = await Swal.fire({
-            title: `UPDATE DATA ${USER_ROLE}`,
-            width: 700,
-            html: `
-                <div class="grid grid-cols-2 gap-3 text-left mt-2 overflow-y-auto max-h-[70vh] p-1">
-                    
-                    <div class="col-span-2 bg-blue-50 p-2 text-[10px] text-blue-800 font-bold mb-2 rounded border border-blue-200">DATA MUATAN (ADMIN ONLY)</div>
-                    
-                    <div><label class="text-[9px] font-bold text-slate-500 block">NO DN</label>
-                    <input id="sw-dn" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.dn}" ${readOnlyAll}></div>
-                    
-                    <div><label class="text-[9px] font-bold text-slate-500 block">UNIT SAP</label>
-                    <input id="sw-unit" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.unit}" ${readOnlyAll}></div>
-                    
-                    <div class="col-span-2"><label class="text-[9px] font-bold text-slate-500 block">CUSTOMER</label>
-                    <input id="sw-customer" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.customer}" ${readOnlyAll}></div>
-                    
-                    <div><label class="text-[9px] font-bold text-slate-500 block">KOTA</label>
-                    <input id="sw-kota" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.kota}" ${readOnlyAll}></div>
-                    
-                    <div><label class="text-[9px] font-bold text-slate-500 block">QTY</label>
-                    <input id="sw-qty" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.qty}" ${readOnlyAll}></div>
-                    
-                    <div class="col-span-2 bg-slate-100 p-2 text-[10px] text-slate-800 font-bold my-2 rounded border border-slate-200">DATA ARMADA (VENDOR AREA)</div>
-                    
-                    <div><label class="text-[9px] font-bold text-slate-500 block">VENDOR</label>
-                    <input id="sw-vendor" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.vendor}" ${readOnlyAll}></div>
-                    
-                    <div><label class="text-[9px] font-bold text-slate-500 block">NOPOL</label>
-                    <input id="sw-nopol" class="form-input ${disableNopol ? styleDisabled : 'bg-white border-blue-500 ring-2 ring-blue-100'}" value="${item.nopol}" ${disableNopol}></div>
-                    
-                    <div class="col-span-2"><label class="text-[9px] font-bold text-slate-500 block">DRIVER</label>
-                    <input id="sw-driver" class="form-input ${disableNopol ? styleDisabled : 'bg-white border-blue-500 ring-2 ring-blue-100'}" value="${item.driver}" ${disableNopol}></div>
-                    
-                    <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
-                        <label class="text-[9px] font-bold text-yellow-700 block">TGL STUFFING (ADMIN)</label>
-                        <input id="sw-stuffing" type="date" class="form-input ${USER_ROLE!=='ADMIN'?styleDisabled:''}" value="${item.stuffing}" ${readOnlyAll}>
-                    </div>
-                    
-                    <div class="bg-green-50 p-2 rounded border border-green-200">
-                        <label class="text-[9px] font-bold text-green-700 block">TGL BONGKAR (CUSTOMER)</label>
-                        <input id="sw-bongkar" type="date" class="form-input ${disableBongkar ? styleDisabled : 'bg-white border-green-500 ring-2 ring-green-100'}" value="${item.bongkar}" ${disableBongkar}>
-                    </div>
-                </div>
-            `,
-            focusConfirm: false, showCancelButton: true, confirmButtonText: 'SIMPAN DATA', confirmButtonColor: '#2563eb',
-            preConfirm: () => {
-                // Saat simpan, kita kembalikan nilai sesuai role
-                // Jika input disabled, kita ambil nilai lama dari 'item' agar tidak kosong/error
-                return {
-                    dn: USER_ROLE==='ADMIN' ? document.getElementById('sw-dn').value.toUpperCase() : item.dn,
-                    unit: USER_ROLE==='ADMIN' ? document.getElementById('sw-unit').value.toUpperCase() : item.unit,
-                    customer: USER_ROLE==='ADMIN' ? document.getElementById('sw-customer').value.toUpperCase() : item.customer,
-                    kota: USER_ROLE==='ADMIN' ? document.getElementById('sw-kota').value.toUpperCase() : item.kota,
-                    qty: USER_ROLE==='ADMIN' ? parseFloat(document.getElementById('sw-qty').value) : item.qty,
-                    vendor: USER_ROLE==='ADMIN' ? document.getElementById('sw-vendor').value.toUpperCase() : item.vendor,
-                    stuffing: USER_ROLE==='ADMIN' ? document.getElementById('sw-stuffing').value : item.stuffing,
-                    
-                    // Vendor & Admin boleh edit ini
-                    nopol: (USER_ROLE==='ADMIN' || USER_ROLE==='VENDOR') ? document.getElementById('sw-nopol').value.toUpperCase() : item.nopol,
-                    driver: (USER_ROLE==='ADMIN' || USER_ROLE==='VENDOR') ? document.getElementById('sw-driver').value.toUpperCase() : item.driver,
-                    
-                    // Customer & Admin boleh edit ini
-                    bongkar: (USER_ROLE==='ADMIN' || USER_ROLE==='CUSTOMER') ? document.getElementById('sw-bongkar').value : item.bongkar
-                }
-            }
-        });
-
-        if (formValues) {
-            Swal.fire({title: 'Menyimpan...', didOpen: () => Swal.showLoading()});
-            db.collection("bookings").doc(id).update(formValues)
-            .then(() => Swal.fire({icon: 'success', title: 'Data Terupdate!', timer: 800, showConfirmButton: false}))
-            .catch((error) => Swal.fire('Gagal', error.message, 'error'));
-        }
+        if(nDn !== null) updates.dn = nDn.toUpperCase();
+        if(nCust !== null) updates.customer = nCust.toUpperCase();
+        if(nQty !== null) updates.qty = parseFloat(nQty) || 0;
+        if(nNopol !== null) updates.nopol = nNopol.toUpperCase();
+        if(nDriver !== null) updates.driver = nDriver.toUpperCase();
+        if(nStuffing !== null) updates.stuffing = nStuffing;
+        if(nBongkar !== null) updates.bongkar = nBongkar;
+    } 
+    
+    // 2. LOGIKA EDIT UNTUK VENDOR
+    else if (USER_ROLE === 'VENDOR') {
+        const nNopol = prompt(info + "Update NOPOL:", item.nopol);
+        const nDriver = prompt("Update DRIVER:", item.driver);
+        
+        if(nNopol !== null) updates.nopol = nNopol.toUpperCase();
+        if(nDriver !== null) updates.driver = nDriver.toUpperCase();
+    } 
+    
+    // 3. LOGIKA EDIT UNTUK CUSTOMER
+    else if (USER_ROLE === 'CUSTOMER') {
+        const nBongkar = prompt(info + "Update TGL BONGKAR (YYYY-MM-DD):", item.bongkar);
+        
+        if(nBongkar !== null) updates.bongkar = nBongkar;
     }
+
+    // PROSES SIMPAN KE FIREBASE
+    if (Object.keys(updates).length > 0) {
+        // Karena Swal.fire (Loading) tidak bisa dipakai, kita pakai notif biasa
+        console.log("Sedang menyimpan ke server...");
+        
+        db.collection("bookings").doc(id).update(updates)
+        .then(() => {
+            alert("Data Berhasil Diperbarui!");
+        })
+        .catch((error) => {
+            alert("Gagal Update: " + error.message);
+        });
+    }
+}
 
         function resetData() {
         Swal.fire('Fitur Dimatikan', 'Demi keamanan data Cloud, tombol Reset Global dinonaktifkan.', 'info');
