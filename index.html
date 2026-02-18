@@ -278,7 +278,7 @@
             <div class="space-y-4 text-left">
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 ml-1">USERNAME</label>
-                    <input type="text" id="username-input" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg text-xs font-bold uppercase focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan Username">
+                    <input type="text" id="username-input" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan Username">
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 ml-1">PASSWORD</label>
@@ -319,16 +319,19 @@
 
     // --- 3. SISTEM LOGIN (ANTI BLOKIR) ---
     function prosesLogin() {
+        // 1. Ambil input & ubah ke huruf kecil (solusi capslock)
         const email = document.getElementById('username-input').value.trim().toLowerCase();
         const pass = document.getElementById('password-input').value.trim();
 
         if (!email || !pass) { alert('Harap isi Email dan Password!'); return; }
 
+        // 2. Ubah tombol jadi Loading
         const btnLogin = document.querySelector('button[onclick="prosesLogin()"]');
         const textAsli = btnLogin.innerHTML;
         btnLogin.innerHTML = 'MOHON TUNGGU...';
         btnLogin.disabled = true;
 
+        // 3. Proses ke Firebase
         auth.signInWithEmailAndPassword(email, pass)
             .then((cred) => {
                 return db.collection('users').doc(email).get();
@@ -336,6 +339,11 @@
             .then((doc) => {
                 if (doc.exists) {
                     const data = doc.data();
+
+                    // --- [PENTING!] SIMPAN SESI BARU ---
+                    // Ini akan menimpa data 'Silog' yang nyangkut dengan data user yang baru login
+                    localStorage.setItem('dockplan_session', JSON.stringify(data));
+
                     masukAplikasi(data.role, data.nama);
                     alert(`Login Berhasil!\nSelamat Datang, ${data.nama}`); 
                 } else {
@@ -401,6 +409,9 @@
 
     function logout() {
         if (confirm("Yakin ingin keluar?")) {
+            // TAMBAHKAN BARIS INI: Hapus data sesi dari memori browser
+            localStorage.removeItem('dockplan_session'); 
+            
             auth.signOut().then(() => location.reload());
         }
     }
@@ -1128,56 +1139,43 @@ function simpanPerubahan() {
         // --- POINT 3: AUTO-LOGIN SAAT REFRESH ---
 // Fungsi ini akan berjalan otomatis setiap kali halaman dimuat (onload)
 // --- GABUNGAN: SETUP USER & AUTO LOGIN (PASTE DI PALING BAWAH) ---
+// --- BAGIAN PALING BAWAH SCRIPT ---
+
 window.addEventListener('load', function() {
     
-    // BAGIAN 1: TOMBOL MAGIC SETUP USER (Penting buat Database Awal)
-    const btn = document.createElement("button");
-    btn.id = "btn-setup-darurat";
-    btn.innerHTML = "⚠️ KLIK UTK SETUP USER";
-    btn.style.cssText = "position:fixed; bottom:20px; left:20px; z-index:9999; background:red; color:white; padding:15px; font-weight:bold; border:2px solid white; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer;";
+    // BAGIAN TOMBOL SETUP SUDAH DIHAPUS AGAR TIDAK MENGGANGGU TAMPILAN
     
-    btn.onclick = function() {
-        if(!confirm("Daftarkan User Database (Dewi Sri, TNJ, Silog, MGM) sekarang?")) return;
-        
-        btn.innerHTML = "PROSES...";
-        const batch = db.batch();
-        const users = [
-            { email: 'dewisri333@ikk.co.id', role: 'VENDOR', nama: 'DEWI SRI' },
-            { email: 'tnj222@ikk.co.id', role: 'VENDOR', nama: 'TNJ' },
-            { email: 'silog111@ikk.co.id', role: 'VENDOR', nama: 'SILOG' },
-            { email: 'mgm123@ikk.co.id', role: 'CUSTOMER', nama: 'PT. MULIA GRAND MANUFACTURE' }
-        ];
-
-        users.forEach(u => {
-            const ref = db.collection('users').doc(u.email);
-            batch.set(ref, { role: u.role, nama: u.nama.toUpperCase() });
-        });
-
-        batch.commit()
-            .then(() => {
-                alert('SUKSES! User sudah disetup. Silakan Login.');
-                btn.style.display = 'none';
-            })
-            .catch(e => alert('Gagal: ' + e.message));
-    };
-    document.body.appendChild(btn);
-
-    // BAGIAN 2: LOGIC AUTO LOGIN
+    // LOGIC AUTO LOGIN (CEK APAKAH USER MASIH LOGIN)
     const savedUser = localStorage.getItem('dockplan_session');
+    
     if (savedUser) {
-        // Jika ada sesi tersimpan, langsung masuk
-        const data = JSON.parse(savedUser);
-        console.log("Auto-login berhasil sebagai: " + data.nama);
-        masukAplikasi(data.role, data.nama);
+        // Jika ada sesi tersimpan, langsung masuk (Skip Login)
+        try {
+            const data = JSON.parse(savedUser);
+            // Cek validitas data sedikit biar gak error
+            if(data && data.role && data.nama) {
+                console.log("Auto-login berhasil sebagai: " + data.nama);
+                masukAplikasi(data.role, data.nama);
+            } else {
+                throw new Error("Data sesi rusak");
+            }
+        } catch (e) {
+            // Jika data sesi rusak, hapus dan suruh login ulang
+            localStorage.removeItem('dockplan_session');
+            tampilkanLogin();
+        }
     } else {
-        // Jika tidak ada, tampilkan layar login
+        // Jika tidak ada sesi, tampilkan layar login
+        tampilkanLogin();
+    }
+
+    function tampilkanLogin() {
         const loginScreen = document.getElementById('login-screen');
         if(loginScreen) {
             loginScreen.classList.remove('hidden');
             loginScreen.classList.remove('opacity-0');
             loginScreen.classList.remove('pointer-events-none');
         }
-        console.log("Sesi tidak ditemukan, silakan login.");
     }
 });
     </script>
