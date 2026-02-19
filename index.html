@@ -212,7 +212,7 @@
         <div class="p-6 max-w-[100%] mx-auto">
 
             <div id="view-dashboard-stats" class="space-y-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     <div class="stat-card border-l-4 border-slate-600 p-4 flex-col md:flex-row justify-center md:justify-between">
                         <div class="text-center md:text-left w-full">
                             <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">CLOSED SHIPMENT</p>
@@ -239,19 +239,23 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <h4 class="text-[11px] font-bold text-slate-600 mb-4 uppercase tracking-wider"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> Distribusi Lead Time</h4>
-                        <canvas id="chartDistribution"></canvas>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <h4 class="text-[11px] font-bold text-slate-600 mb-4 uppercase tracking-wider"><i class="fas fa-chart-line text-emerald-500 mr-2"></i> Trend Performa Bulanan</h4>
-                        <canvas id="chartMonthly"></canvas>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm md:col-span-2 lg:col-span-1 lg:mx-auto lg:w-2/3">
-                        <h4 class="text-[11px] font-bold text-slate-600 mb-4 uppercase tracking-wider text-center"><i class="fas fa-chart-pie text-red-500 mr-2"></i> Kecepatan Proses (≤3 Hari vs >3 Hari)</h4>
-                        <div class="relative h-64">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h4 class="text-[11px] font-bold text-slate-600 mb-3 uppercase tracking-wider text-center"><i class="fas fa-chart-pie text-red-500 mr-2"></i> Kecepatan Proses</h4>
+                        <div class="relative w-full h-[220px]">
                             <canvas id="chartFastSlow"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h4 class="text-[11px] font-bold text-slate-600 mb-3 uppercase tracking-wider text-center"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> Distribusi (Hari)</h4>
+                        <div class="relative w-full h-[220px]">
+                            <canvas id="chartDistribution"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h4 class="text-[11px] font-bold text-slate-600 mb-3 uppercase tracking-wider text-center"><i class="fas fa-chart-line text-emerald-500 mr-2"></i> Trend Bulanan</h4>
+                        <div class="relative w-full h-[220px]">
+                            <canvas id="chartMonthly"></canvas>
                         </div>
                     </div>
                 </div>
@@ -571,7 +575,6 @@
         const searchBox = document.getElementById('searchInput');
         if(searchBox) searchBox.value = '';
 
-        // Default open analytics on login
         renderAnalytics();
         updateStats();
     }
@@ -627,7 +630,6 @@
             dataTampil = dataTampil.filter(item => item.customer && item.customer.toUpperCase() === USER_NAME);
         }
 
-        // Filter Hanya CLOSED (History Logic) yang memiliki stuffing dan bongkar
         dataTampil = dataTampil.filter(item => isHistory(item.bongkar) && item.stuffing && item.bongkar);
 
         let totalClosed = dataTampil.length;
@@ -643,18 +645,15 @@
 
             const diffDays = Math.max(0, Math.ceil((dBongkar - dStuffing) / (1000 * 60 * 60 * 24)));
 
-            // Basic Stats
             sumDays += diffDays;
             if (diffDays < minDays) minDays = diffDays;
             if (diffDays > maxDays) maxDays = diffDays;
 
-            // Distribution
             if (diffDays <= 1) dist['0-1']++;
             else if (diffDays <= 3) dist['2-3']++;
             else if (diffDays <= 5) dist['4-5']++;
             else dist['>5']++;
 
-            // Monthly Trend (Based on Bongkar Date)
             const m = dBongkar.getMonth();
             const y = dBongkar.getFullYear();
             const key = `${y}-${String(m + 1).padStart(2, '0')}`;
@@ -666,18 +665,15 @@
             monthly[key].sum += diffDays;
         });
 
-        // Fallbacks
         if (minDays === Infinity) minDays = 0;
         if (maxDays === -1) maxDays = 0;
         let avgDays = totalClosed > 0 ? (sumDays / totalClosed).toFixed(1) : 0;
 
-        // Update DOM Stats Cards
         document.getElementById('analytic-total').innerText = totalClosed;
         document.getElementById('analytic-avg').innerText = avgDays;
         document.getElementById('analytic-min').innerText = minDays;
         document.getElementById('analytic-max').innerText = maxDays;
 
-        // Prepare Chart Data
         const distLabels = ['0-1 Hari', '2-3 Hari', '4-5 Hari', '> 5 Hari'];
         const distData = [dist['0-1'], dist['2-3'], dist['4-5'], dist['>5']];
 
@@ -689,7 +685,6 @@
         const fastCount = dist['0-1'] + dist['2-3'];
         const slowCount = dist['4-5'] + dist['>5'];
 
-        // Destroy Old Charts
         if (chartDistInstance) chartDistInstance.destroy();
         if (chartMonthlyInstance) chartMonthlyInstance.destroy();
         if (chartFastSlowInstance) chartFastSlowInstance.destroy();
@@ -707,7 +702,12 @@
                     borderRadius: 4
                 }]
             },
-            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } }
+            }
         });
 
         // Render Line Chart (Trend Bulanan)
@@ -737,6 +737,7 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Lead Time (Hari)' }, beginAtZero: true },
                     y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Total Shipment' }, beginAtZero: true, ticks: { stepSize: 1 } }
@@ -756,7 +757,10 @@
                     borderWidth: 0
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false 
+            }
         });
     }
 
