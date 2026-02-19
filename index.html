@@ -154,12 +154,17 @@
 
         <nav class="flex-1 w-full py-0 md:py-6 space-y-0 md:space-y-2 flex md:block items-center md:items-stretch justify-around">
             
+            <div onclick="showPage('dashboard-stats')" id="menu-dashboard-stats" class="nav-item active">
+                <i class="fas fa-chart-line w-5 text-center"></i>
+                <span class="nav-text">DASHBOARD</span>
+            </div>
+
             <div onclick="showPage('input')" id="menu-input" class="nav-item">
                 <i class="fas fa-keyboard w-5 text-center"></i>
                 <span class="nav-text">INPUT</span>
             </div>
             
-            <div onclick="showPage('dashboard')" id="menu-dashboard" class="nav-item active">
+            <div onclick="showPage('dashboard')" id="menu-dashboard" class="nav-item">
                 <i class="fas fa-desktop w-5 text-center"></i>
                 <span class="nav-text">MONITOR</span>
             </div>
@@ -192,7 +197,7 @@
                 <button onclick="toggleSidebar()" class="text-slate-400 hover:text-blue-600 transition"><i class="fas fa-bars text-lg"></i></button>
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 tracking-tight">DOCKING PLANNING SYSTEM</h2>
-                    <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wide" id="page-subtitle">Monitoring Overview</p>
+                    <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wide" id="page-subtitle">ANALYTICS & PERFORMANCE</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -205,8 +210,54 @@
         </header>
 
         <div class="p-6 max-w-[100%] mx-auto">
+
+            <div id="view-dashboard-stats" class="space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                    <div class="stat-card border-l-4 border-slate-600 p-4 flex-col md:flex-row justify-center md:justify-between">
+                        <div class="text-center md:text-left w-full">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">CLOSED SHIPMENT</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-slate-800 leading-none mt-1" id="analytic-total">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card border-l-4 border-blue-600 p-4 flex-col md:flex-row justify-center md:justify-between">
+                        <div class="text-center md:text-left w-full">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">AVG LEAD TIME</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-blue-600 leading-none mt-1"><span id="analytic-avg">0</span> <span class="text-[10px] text-slate-400 uppercase">Hari</span></h3>
+                        </div>
+                    </div>
+                    <div class="stat-card border-l-4 border-emerald-500 p-4 flex-col md:flex-row justify-center md:justify-between">
+                        <div class="text-center md:text-left w-full">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">FASTEST DELIVERY</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-emerald-600 leading-none mt-1"><span id="analytic-min">0</span> <span class="text-[10px] text-slate-400 uppercase">Hari</span></h3>
+                        </div>
+                    </div>
+                    <div class="stat-card border-l-4 border-red-500 p-4 flex-col md:flex-row justify-center md:justify-between">
+                        <div class="text-center md:text-left w-full">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">LONGEST DELIVERY</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-red-600 leading-none mt-1"><span id="analytic-max">0</span> <span class="text-[10px] text-slate-400 uppercase">Hari</span></h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-[11px] font-bold text-slate-600 mb-4 uppercase tracking-wider"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> Distribusi Lead Time</h4>
+                        <canvas id="chartDistribution"></canvas>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-[11px] font-bold text-slate-600 mb-4 uppercase tracking-wider"><i class="fas fa-chart-line text-emerald-500 mr-2"></i> Trend Performa Bulanan</h4>
+                        <canvas id="chartMonthly"></canvas>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm md:col-span-2 lg:col-span-1 lg:mx-auto lg:w-2/3">
+                        <h4 class="text-[11px] font-bold text-slate-600 mb-4 uppercase tracking-wider text-center"><i class="fas fa-chart-pie text-red-500 mr-2"></i> Kecepatan Proses (≤3 Hari vs >3 Hari)</h4>
+                        <div class="relative h-64">
+                            <canvas id="chartFastSlow"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <div id="view-dashboard" class="space-y-6">
+            <div id="view-dashboard" class="hidden space-y-6">
                 <div class="grid grid-cols-3 gap-2 md:gap-6">
     
                     <div class="stat-card border-l-2 md:border-l-4 border-blue-600 p-2 md:p-5 flex-col md:flex-row items-start md:items-center justify-center md:justify-between">
@@ -411,6 +462,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     // --- 1. KONEKSI FIREBASE ---
     const firebaseConfig = {
@@ -435,6 +487,9 @@
     let localData = []; 
     let USER_ROLE = ''; 
     let USER_NAME = ''; 
+    let chartDistInstance = null;
+    let chartMonthlyInstance = null;
+    let chartFastSlowInstance = null;
 
     // --- 3. SISTEM LOGIN ---
     function prosesLogin() {
@@ -493,7 +548,7 @@
 
         document.getElementById('login-screen').classList.add('hidden');
         const subtitle = document.getElementById('page-subtitle');
-        if(subtitle) subtitle.innerText = `${nama} (${role})`;
+        if(subtitle) subtitle.innerText = `ANALYTICS & PERFORMANCE`;
 
         // ATUR MENU
         const btnInput = document.getElementById('menu-input');
@@ -516,8 +571,8 @@
         const searchBox = document.getElementById('searchInput');
         if(searchBox) searchBox.value = '';
 
-        renderTable();
-        renderHistory();
+        // Default open analytics on login
+        renderAnalytics();
         updateStats();
     }
 
@@ -540,6 +595,8 @@
         const activePage = document.querySelector('.nav-item.active').id;
         if(activePage === 'menu-history') {
             renderHistory();
+        } else if (activePage === 'menu-dashboard-stats') {
+            renderAnalytics();
         } else {
             renderTable();
         }
@@ -553,11 +610,154 @@
         today.setHours(0,0,0,0);
         
         const bongkarDate = new Date(bongkarDateStr);
-        // H+1 Logic: If Today > Bongkar + 1 day
         const limit = new Date(bongkarDate);
         limit.setDate(limit.getDate() + 1);
         
         return today > limit;
+    }
+
+    // --- RENDER ANALYTICS (Dashboard Stats) ---
+    function renderAnalytics() {
+        let dataTampil = localData;
+
+        // Role Filtering
+        if (USER_ROLE === 'VENDOR') {
+            dataTampil = dataTampil.filter(item => item.vendor && item.vendor.toUpperCase() === USER_NAME);
+        } else if (USER_ROLE === 'CUSTOMER') {
+            dataTampil = dataTampil.filter(item => item.customer && item.customer.toUpperCase() === USER_NAME);
+        }
+
+        // Filter Hanya CLOSED (History Logic) yang memiliki stuffing dan bongkar
+        dataTampil = dataTampil.filter(item => isHistory(item.bongkar) && item.stuffing && item.bongkar);
+
+        let totalClosed = dataTampil.length;
+        let sumDays = 0, minDays = Infinity, maxDays = -1;
+        let dist = { '0-1': 0, '2-3': 0, '4-5': 0, '>5': 0 };
+        let monthly = {};
+
+        dataTampil.forEach(item => {
+            const dStuffing = new Date(item.stuffing);
+            const dBongkar = new Date(item.bongkar);
+            dStuffing.setHours(0,0,0,0);
+            dBongkar.setHours(0,0,0,0);
+
+            const diffDays = Math.max(0, Math.ceil((dBongkar - dStuffing) / (1000 * 60 * 60 * 24)));
+
+            // Basic Stats
+            sumDays += diffDays;
+            if (diffDays < minDays) minDays = diffDays;
+            if (diffDays > maxDays) maxDays = diffDays;
+
+            // Distribution
+            if (diffDays <= 1) dist['0-1']++;
+            else if (diffDays <= 3) dist['2-3']++;
+            else if (diffDays <= 5) dist['4-5']++;
+            else dist['>5']++;
+
+            // Monthly Trend (Based on Bongkar Date)
+            const m = dBongkar.getMonth();
+            const y = dBongkar.getFullYear();
+            const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+            
+            if (!monthly[key]) {
+                monthly[key] = { count: 0, sum: 0, label: dBongkar.toLocaleString('id-ID', { month: 'short', year: 'numeric' }) };
+            }
+            monthly[key].count++;
+            monthly[key].sum += diffDays;
+        });
+
+        // Fallbacks
+        if (minDays === Infinity) minDays = 0;
+        if (maxDays === -1) maxDays = 0;
+        let avgDays = totalClosed > 0 ? (sumDays / totalClosed).toFixed(1) : 0;
+
+        // Update DOM Stats Cards
+        document.getElementById('analytic-total').innerText = totalClosed;
+        document.getElementById('analytic-avg').innerText = avgDays;
+        document.getElementById('analytic-min').innerText = minDays;
+        document.getElementById('analytic-max').innerText = maxDays;
+
+        // Prepare Chart Data
+        const distLabels = ['0-1 Hari', '2-3 Hari', '4-5 Hari', '> 5 Hari'];
+        const distData = [dist['0-1'], dist['2-3'], dist['4-5'], dist['>5']];
+
+        const sortedMonthKeys = Object.keys(monthly).sort();
+        const monthLabels = sortedMonthKeys.map(k => monthly[k].label);
+        const monthDataAvg = sortedMonthKeys.map(k => (monthly[k].sum / monthly[k].count).toFixed(1));
+        const monthDataTotal = sortedMonthKeys.map(k => monthly[k].count);
+
+        const fastCount = dist['0-1'] + dist['2-3'];
+        const slowCount = dist['4-5'] + dist['>5'];
+
+        // Destroy Old Charts
+        if (chartDistInstance) chartDistInstance.destroy();
+        if (chartMonthlyInstance) chartMonthlyInstance.destroy();
+        if (chartFastSlowInstance) chartFastSlowInstance.destroy();
+
+        // Render Bar Chart (Distribusi)
+        const ctxDist = document.getElementById('chartDistribution').getContext('2d');
+        chartDistInstance = new Chart(ctxDist, {
+            type: 'bar',
+            data: {
+                labels: distLabels,
+                datasets: [{
+                    label: 'Jumlah Shipment',
+                    data: distData,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        // Render Line Chart (Trend Bulanan)
+        const ctxMonthly = document.getElementById('chartMonthly').getContext('2d');
+        chartMonthlyInstance = new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [
+                    {
+                        label: 'Avg Lead Time (Hari)',
+                        data: monthDataAvg,
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Total Shipment',
+                        data: monthDataTotal,
+                        backgroundColor: '#cbd5e1',
+                        borderRadius: 4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Lead Time (Hari)' }, beginAtZero: true },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Total Shipment' }, beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+
+        // Render Doughnut Chart (Fast vs Slow)
+        const ctxFastSlow = document.getElementById('chartFastSlow').getContext('2d');
+        chartFastSlowInstance = new Chart(ctxFastSlow, {
+            type: 'doughnut',
+            data: {
+                labels: ['Cepat (≤ 3 Hari)', 'Lambat (> 3 Hari)'],
+                datasets: [{
+                    data: [fastCount, slowCount],
+                    backgroundColor: ['#10b981', '#f43f5e'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
     }
 
     // --- RENDER TABLE MONITORING (Exclude History) ---
@@ -572,7 +772,6 @@
             dataTampil = dataTampil.filter(item => item.customer && item.customer.toUpperCase() === USER_NAME);
         }
 
-        // FILTER UTAMA: HANYA TAMPILKAN YG BELUM HISTORY
         dataTampil = dataTampil.filter(item => !isHistory(item.bongkar));
 
         if(filter) {
@@ -700,7 +899,6 @@
             dataTampil = dataTampil.filter(item => item.customer && item.customer.toUpperCase() === USER_NAME);
         }
 
-        // FILTER UTAMA: HANYA TAMPILKAN YG SUDAH LEWAT H+1
         dataTampil = dataTampil.filter(item => isHistory(item.bongkar));
 
         if(filter) {
@@ -743,7 +941,6 @@
 
             const displayQty = Math.round(item.qty).toLocaleString('id-ID');
 
-            // --- TABLE ROW HISTORY ---
             const row = `
             <tr class="border-b hover:bg-slate-50 transition bg-slate-50/50">
                 <td><input type="checkbox" class="row-chk" value="${item.id}" onclick="updateDeleteButton()"></td>
@@ -767,7 +964,6 @@
             </tr>`;
             tbody.innerHTML += row;
 
-            // --- MOBILE CARD HISTORY ---
             const card = `
             <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 mb-3 relative overflow-hidden grayscale-[0.3]">
                 <div class="absolute top-0 right-0 bg-slate-200 text-slate-500 text-[8px] font-bold px-2 py-1 rounded-bl">HISTORY</div>
@@ -882,7 +1078,6 @@
             dataHitung = dataHitung.filter(item => item.customer && item.customer.toUpperCase() === USER_NAME);
         }
 
-        // Stats hanya menghitung yang ACTIVE (bukan history)
         dataHitung = dataHitung.filter(item => !isHistory(item.bongkar));
 
         const total = dataHitung.length;
@@ -894,277 +1089,282 @@
         if(document.getElementById('stat-confirmed')) document.getElementById('stat-confirmed').innerText = confirmed;
     }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('main-content').classList.toggle('expanded');
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+        document.getElementById('main-content').classList.toggle('expanded');
+    }
+
+    window.showPage = function(pageId) {
+        document.getElementById('view-dashboard').classList.add('hidden');
+        document.getElementById('view-input').classList.add('hidden');
+        document.getElementById('view-history').classList.add('hidden'); 
+        document.getElementById('view-dashboard-stats').classList.add('hidden'); 
+
+        document.getElementById('menu-dashboard').classList.remove('active');
+        document.getElementById('menu-input').classList.remove('active');
+        document.getElementById('menu-history').classList.remove('active');
+        document.getElementById('menu-dashboard-stats').classList.remove('active');
+        
+        document.getElementById(`view-${pageId}`).classList.remove('hidden');
+        document.getElementById(`menu-${pageId}`).classList.add('active');
+        
+        if(pageId === 'dashboard-stats') {
+            document.getElementById('page-subtitle').innerText = 'ANALYTICS & PERFORMANCE';
+            renderAnalytics();
+        } else if(pageId === 'dashboard') {
+            document.getElementById('page-subtitle').innerText = 'MONITORING OVERVIEW';
+            renderTable();
+        } else if (pageId === 'history') {
+            document.getElementById('page-subtitle').innerText = 'HISTORY CLOSED DATA';
+            renderHistory();
+        } else {
+            document.getElementById('page-subtitle').innerText = 'DATA ENTRY';
+            document.getElementById('input-vendor-batch').value = ''; 
+            document.getElementById('paste-area').value = '';
         }
 
-        window.showPage = function(pageId) {
-            document.getElementById('view-dashboard').classList.add('hidden');
-            document.getElementById('view-input').classList.add('hidden');
-            document.getElementById('view-history').classList.add('hidden'); 
+        document.getElementById('checkAll').checked = false;
+        document.getElementById('checkAllHistory').checked = false;
+        updateDeleteButton();
+    }
 
-            document.getElementById('menu-dashboard').classList.remove('active');
-            document.getElementById('menu-input').classList.remove('active');
-            document.getElementById('menu-history').classList.remove('active');
-            
-            document.getElementById(`view-${pageId}`).classList.remove('hidden');
-            document.getElementById(`menu-${pageId}`).classList.add('active');
-            
-            if(pageId === 'dashboard') {
-                document.getElementById('page-subtitle').innerText = 'MONITORING OVERVIEW';
-                renderTable();
-            } else if (pageId === 'history') {
-                document.getElementById('page-subtitle').innerText = 'HISTORY CLOSED DATA';
-                renderHistory();
-            } else {
-                document.getElementById('page-subtitle').innerText = 'DATA ENTRY';
-                document.getElementById('input-vendor-batch').value = ''; 
-                document.getElementById('paste-area').value = '';
-            }
+    // --- CHECKBOX LOGIC ---
+    window.toggleSelectAll = function() {
+        const isChecked = document.getElementById('checkAll').checked;
+        document.querySelectorAll('#table-body .row-chk').forEach(cb => cb.checked = isChecked);
+        updateDeleteButton();
+    }
 
-            document.getElementById('checkAll').checked = false;
-            document.getElementById('checkAllHistory').checked = false;
-            updateDeleteButton();
+    window.toggleSelectAllHistory = function() {
+        const isChecked = document.getElementById('checkAllHistory').checked;
+        document.querySelectorAll('#table-body-history .row-chk').forEach(cb => cb.checked = isChecked);
+        updateDeleteButton();
+    }
+
+    window.updateDeleteButton = function() {
+        const checkedCount = document.querySelectorAll('.row-chk:checked').length;
+        
+        if(document.getElementById('selected-count')) {
+            document.getElementById('selected-count').innerText = checkedCount;
+            document.getElementById('btn-delete-bulk').disabled = checkedCount === 0;
         }
 
-        // --- CHECKBOX LOGIC ---
-        window.toggleSelectAll = function() {
-            const isChecked = document.getElementById('checkAll').checked;
-            document.querySelectorAll('#table-body .row-chk').forEach(cb => cb.checked = isChecked);
-            updateDeleteButton();
+        if(document.getElementById('selected-count-history')) {
+            document.getElementById('selected-count-history').innerText = checkedCount;
+            document.getElementById('btn-delete-history').disabled = checkedCount === 0;
         }
+    }
 
-        window.toggleSelectAllHistory = function() {
-            const isChecked = document.getElementById('checkAllHistory').checked;
-            document.querySelectorAll('#table-body-history .row-chk').forEach(cb => cb.checked = isChecked);
-            updateDeleteButton();
-        }
+    window.deleteSelected = function() {
+        const checkboxes = document.querySelectorAll('.row-chk:checked');
+        if(checkboxes.length === 0) return;
 
-        window.updateDeleteButton = function() {
-            const checkedCount = document.querySelectorAll('.row-chk:checked').length;
-            
-            if(document.getElementById('selected-count')) {
-                document.getElementById('selected-count').innerText = checkedCount;
-                document.getElementById('btn-delete-bulk').disabled = checkedCount === 0;
-            }
-
-            if(document.getElementById('selected-count-history')) {
-                document.getElementById('selected-count-history').innerText = checkedCount;
-                document.getElementById('btn-delete-history').disabled = checkedCount === 0;
-            }
-        }
-
-        window.deleteSelected = function() {
-            const checkboxes = document.querySelectorAll('.row-chk:checked');
-            if(checkboxes.length === 0) return;
-
-            if (confirm(`Hapus ${checkboxes.length} Data?\nData akan hilang selamanya dari server Google!`)) {
-                console.log("Sedang menghapus data...");
-                const batch = db.batch(); 
-                checkboxes.forEach((cb) => {
-                    const docId = cb.value; 
-                    const docRef = db.collection("bookings").doc(docId);
-                    batch.delete(docRef);
-                });
-
-                batch.commit().then(() => {
-                    alert("Data berhasil dihapus.");
-                    document.getElementById('checkAll').checked = false;
-                    document.getElementById('checkAllHistory').checked = false;
-                    updateDeleteButton(); 
-                }).catch((error) => {
-                    console.error("Gagal hapus:", error);
-                    alert("Error: Gagal menghapus data: " + error.message);
-                });
-            }
-        }
-
-        window.exportToExcel = function() {
-            let db = localData; 
-            if(db.length === 0) { alert('Data Kosong'); return; }
-
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "NO,CREATED,DN,CUSTOMER,KOTA,QTY,UNIT,VENDOR,NOPOL,DRIVER,TGL STUFFING,TGL BONGKAR\n";
-            
-            db.forEach((item, index) => {
-                const created = new Date(item.created).toLocaleDateString('id-ID');
-                const cust = item.customer.replace(/,/g, " ");
-                const row = [
-                    index + 1,
-                    created,
-                    `'${item.dn}`,
-                    cust,
-                    item.kota,
-                    item.qty,
-                    item.unit,
-                    item.vendor,
-                    item.nopol,
-                    item.driver,
-                    item.stuffing || '-',
-                    item.bongkar || '-'
-                ].join(",");
-                csvContent += row + "\n";
+        if (confirm(`Hapus ${checkboxes.length} Data?\nData akan hilang selamanya dari server Google!`)) {
+            console.log("Sedang menghapus data...");
+            const batch = db.batch(); 
+            checkboxes.forEach((cb) => {
+                const docId = cb.value; 
+                const docRef = db.collection("bookings").doc(docId);
+                batch.delete(docRef);
             });
 
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `DOCKPLAN_DATA_${new Date().getTime()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function saveManual() {
-            const dn = document.getElementById('man-dn').value.toUpperCase();
-            const cust = document.getElementById('man-cust').value.toUpperCase();
-            
-            if(!dn || !cust) {
-                alert('No DN dan Customer Wajib Diisi');
-                return;
-            }
-
-            db.collection("bookings").add({
-                created: new Date().toISOString(),
-                dn: dn,
-                customer: cust,
-                kota: document.getElementById('man-kota').value.toUpperCase(),
-                qty: parseFloat(document.getElementById('man-qty').value) || 0,
-                unit: document.getElementById('man-unit').value.toUpperCase(),
-                vendor: document.getElementById('man-vendor').value.toUpperCase(),
-                nopol: document.getElementById('man-nopol').value.toUpperCase(),
-                driver: document.getElementById('man-driver').value.toUpperCase(),
-                stuffing: '', 
-                bongkar: '', 
-                isGb: false
+            batch.commit().then(() => {
+                alert("Data berhasil dihapus.");
+                document.getElementById('checkAll').checked = false;
+                document.getElementById('checkAllHistory').checked = false;
+                updateDeleteButton(); 
             }).catch((error) => {
-                console.error("Gagal simpan:", error);
+                console.error("Gagal hapus:", error);
+                alert("Error: Gagal menghapus data: " + error.message);
             });
+        }
+    }
 
-            ['man-dn','man-cust','man-kota','man-qty','man-unit','man-vendor','man-nopol','man-driver'].forEach(id => document.getElementById(id).value = '');
-            showPage('dashboard');
+    window.exportToExcel = function() {
+        let db = localData; 
+        if(db.length === 0) { alert('Data Kosong'); return; }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "NO,CREATED,DN,CUSTOMER,KOTA,QTY,UNIT,VENDOR,NOPOL,DRIVER,TGL STUFFING,TGL BONGKAR\n";
+        
+        db.forEach((item, index) => {
+            const created = new Date(item.created).toLocaleDateString('id-ID');
+            const cust = item.customer.replace(/,/g, " ");
+            const row = [
+                index + 1,
+                created,
+                `'${item.dn}`,
+                cust,
+                item.kota,
+                item.qty,
+                item.unit,
+                item.vendor,
+                item.nopol,
+                item.driver,
+                item.stuffing || '-',
+                item.bongkar || '-'
+            ].join(",");
+            csvContent += row + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `DOCKPLAN_DATA_${new Date().getTime()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function saveManual() {
+        const dn = document.getElementById('man-dn').value.toUpperCase();
+        const cust = document.getElementById('man-cust').value.toUpperCase();
+        
+        if(!dn || !cust) {
+            alert('No DN dan Customer Wajib Diisi');
+            return;
         }
 
-        function processPaste() {
-            const rawText = document.getElementById('paste-area').value;
-            const vendorBatch = document.getElementById('input-vendor-batch').value.toUpperCase().trim();
-            const unitBatch = document.getElementById('input-unit-batch').value.toUpperCase().trim();
-            const inputTime = new Date().toISOString();
+        db.collection("bookings").add({
+            created: new Date().toISOString(),
+            dn: dn,
+            customer: cust,
+            kota: document.getElementById('man-kota').value.toUpperCase(),
+            qty: parseFloat(document.getElementById('man-qty').value) || 0,
+            unit: document.getElementById('man-unit').value.toUpperCase(),
+            vendor: document.getElementById('man-vendor').value.toUpperCase(),
+            nopol: document.getElementById('man-nopol').value.toUpperCase(),
+            driver: document.getElementById('man-driver').value.toUpperCase(),
+            stuffing: '', 
+            bongkar: '', 
+            isGb: false
+        }).catch((error) => {
+            console.error("Gagal simpan:", error);
+        });
 
-            if(!rawText.trim()) { 
-                alert('Data Kosong: Silakan paste data dulu');
-                return; 
-            }
+        ['man-dn','man-cust','man-kota','man-qty','man-unit','man-vendor','man-nopol','man-driver'].forEach(id => document.getElementById(id).value = '');
+        showPage('dashboard');
+    }
 
-            const lines = rawText.trim().split('\n');
-            const groupedData = {};
-            let singleDataList = [];
+    function processPaste() {
+        const rawText = document.getElementById('paste-area').value;
+        const vendorBatch = document.getElementById('input-vendor-batch').value.toUpperCase().trim();
+        const unitBatch = document.getElementById('input-unit-batch').value.toUpperCase().trim();
+        const inputTime = new Date().toISOString();
 
-            lines.forEach((line, index) => {
-                if(!line.trim()) return;
-                const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
-                if(cols.length < 7) return;
+        if(!rawText.trim()) { 
+            alert('Data Kosong: Silakan paste data dulu');
+            return; 
+        }
 
-                const dn = cols[1];
-                const customer = cols[3];
-                const kota = cols[4];
-                let qtyRaw = cols[5].replace(/,/g, '');
-                let qty = parseFloat(qtyRaw);
-                let cleanUnit = unitBatch || '-';
-                if(!unitBatch && cols[7]) cleanUnit = cols[7].split(/[ ;.,]/)[0].toUpperCase();
+        const lines = rawText.trim().split('\n');
+        const groupedData = {};
+        let singleDataList = [];
 
-                const gbMatch = line.toUpperCase().match(/GB\s*(\d+)/);
-                
-                const entry = {
-                    created: inputTime,
-                    dn: dn,
-                    customer: customer,
-                    kota: kota,
-                    qty: qty, 
-                    unit: cleanUnit,
-                    vendor: vendorBatch || '', 
-                    nopol: '', driver: '', stuffing: '', bongkar: '',
-                    isGb: false
-                };
+        lines.forEach((line, index) => {
+            if(!line.trim()) return;
+            const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+            if(cols.length < 7) return;
 
-                if (gbMatch) {
-                    const gbCode = "GB" + gbMatch[1];
-                    if (!groupedData[gbCode]) {
-                        groupedData[gbCode] = { ...entry };
-                        groupedData[gbCode].dn = [entry.dn];
-                    } else {
-                        groupedData[gbCode].qty += entry.qty;
-                        if (!groupedData[gbCode].dn.includes(entry.dn)) {
-                            groupedData[gbCode].dn.push(entry.dn);
-                        }
-                    }
+            const dn = cols[1];
+            const customer = cols[3];
+            const kota = cols[4];
+            let qtyRaw = cols[5].replace(/,/g, '');
+            let qty = parseFloat(qtyRaw);
+            let cleanUnit = unitBatch || '-';
+            if(!unitBatch && cols[7]) cleanUnit = cols[7].split(/[ ;.,]/)[0].toUpperCase();
+
+            const gbMatch = line.toUpperCase().match(/GB\s*(\d+)/);
+            
+            const entry = {
+                created: inputTime,
+                dn: dn,
+                customer: customer,
+                kota: kota,
+                qty: qty, 
+                unit: cleanUnit,
+                vendor: vendorBatch || '', 
+                nopol: '', driver: '', stuffing: '', bongkar: '',
+                isGb: false
+            };
+
+            if (gbMatch) {
+                const gbCode = "GB" + gbMatch[1];
+                if (!groupedData[gbCode]) {
+                    groupedData[gbCode] = { ...entry };
+                    groupedData[gbCode].dn = [entry.dn];
                 } else {
-                    singleDataList.push(entry);
-                }
-            });
-
-            const finalMergedList = [];
-            for (const key in groupedData) {
-                const item = groupedData[key];
-                item.dn = item.dn.join(', ');
-                finalMergedList.push(item);
-            }
-            const allNewData = [...finalMergedList, ...singleDataList];
-
-            if(allNewData.length > 0) {
-                const batch = db.batch();
-                allNewData.forEach((item) => {
-                    const docRef = db.collection("bookings").doc();
-                    batch.set(docRef, item);
-                });
-
-                batch.commit()
-                    .then(() => {
-                        console.log("Upload berhasil ke Firebase.");
-                        document.getElementById('paste-area').value = '';
-                        document.getElementById('input-vendor-batch').value = '';
-                        alert(`${allNewData.length} Data berhasil diproses ke server.`);
-                        showPage('dashboard');
-                    })
-                    .catch(err => {
-                        console.error("Gagal batch:", err);
-                        alert("Gagal mengirim data ke server: " + err.message);
-                    });
-
-            } else {
-                alert('Gagal: Format data tidak sesuai.');
-            }
-        }
-
-        window.addEventListener('load', function() {
-            const savedUser = localStorage.getItem('dockplan_session');
-            if (savedUser) {
-                try {
-                    const data = JSON.parse(savedUser);
-                    if(data && data.role && data.nama) {
-                        console.log("Auto-login berhasil sebagai: " + data.nama);
-                        masukAplikasi(data.role, data.nama);
-                    } else {
-                        throw new Error("Data sesi rusak");
+                    groupedData[gbCode].qty += entry.qty;
+                    if (!groupedData[gbCode].dn.includes(entry.dn)) {
+                        groupedData[gbCode].dn.push(entry.dn);
                     }
-                } catch (e) {
-                    localStorage.removeItem('dockplan_session');
-                    tampilkanLogin();
                 }
             } else {
-                tampilkanLogin();
-            }
-
-            function tampilkanLogin() {
-                const loginScreen = document.getElementById('login-screen');
-                if(loginScreen) {
-                    loginScreen.classList.remove('hidden');
-                    loginScreen.classList.remove('opacity-0');
-                    loginScreen.classList.remove('pointer-events-none');
-                }
+                singleDataList.push(entry);
             }
         });
+
+        const finalMergedList = [];
+        for (const key in groupedData) {
+            const item = groupedData[key];
+            item.dn = item.dn.join(', ');
+            finalMergedList.push(item);
+        }
+        const allNewData = [...finalMergedList, ...singleDataList];
+
+        if(allNewData.length > 0) {
+            const batch = db.batch();
+            allNewData.forEach((item) => {
+                const docRef = db.collection("bookings").doc();
+                batch.set(docRef, item);
+            });
+
+            batch.commit()
+                .then(() => {
+                    console.log("Upload berhasil ke Firebase.");
+                    document.getElementById('paste-area').value = '';
+                    document.getElementById('input-vendor-batch').value = '';
+                    alert(`${allNewData.length} Data berhasil diproses ke server.`);
+                    showPage('dashboard');
+                })
+                .catch(err => {
+                    console.error("Gagal batch:", err);
+                    alert("Gagal mengirim data ke server: " + err.message);
+                });
+
+        } else {
+            alert('Gagal: Format data tidak sesuai.');
+        }
+    }
+
+    window.addEventListener('load', function() {
+        const savedUser = localStorage.getItem('dockplan_session');
+        if (savedUser) {
+            try {
+                const data = JSON.parse(savedUser);
+                if(data && data.role && data.nama) {
+                    console.log("Auto-login berhasil sebagai: " + data.nama);
+                    masukAplikasi(data.role, data.nama);
+                } else {
+                    throw new Error("Data sesi rusak");
+                }
+            } catch (e) {
+                localStorage.removeItem('dockplan_session');
+                tampilkanLogin();
+            }
+        } else {
+            tampilkanLogin();
+        }
+
+        function tampilkanLogin() {
+            const loginScreen = document.getElementById('login-screen');
+            if(loginScreen) {
+                loginScreen.classList.remove('hidden');
+                loginScreen.classList.remove('opacity-0');
+                loginScreen.classList.remove('pointer-events-none');
+            }
+        }
+    });
     </script>
     <div id="modal-edit" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: white; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
