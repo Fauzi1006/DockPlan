@@ -272,6 +272,9 @@
                     </div>
                     
                     <div class="flex gap-2 w-full md:w-auto">
+                        <button id="btn-edit-bulk" onclick="openBulkEdit()" disabled class="flex-1 md:flex-none bg-white border border-blue-200 text-blue-600 px-4 py-2.5 rounded-lg text-[11px] font-bold hover:bg-blue-50 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400">
+    <i class="fas fa-edit"></i> EDIT MASSAL (<span id="selected-count-edit">0</span>)
+</button>
                         <button id="btn-delete-bulk" onclick="deleteSelected()" disabled class="flex-1 md:flex-none bg-white border border-red-200 text-red-600 px-4 py-2.5 rounded-lg text-[11px] font-bold hover:bg-red-50 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400">
                             <i class="fas fa-trash-alt"></i> HAPUS (<span id="selected-count">0</span>)
                         </button>
@@ -318,6 +321,9 @@
         </div>
         
         <div class="flex gap-2 w-full md:w-auto">
+            <button id="btn-edit-history" onclick="openBulkEdit()" disabled class="flex-1 md:flex-none bg-white border border-blue-200 text-blue-600 px-4 py-2.5 rounded-lg text-[11px] font-bold hover:bg-blue-50 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400">
+    <i class="fas fa-edit"></i> EDIT MASSAL (<span id="selected-count-edit-history">0</span>)
+</button>
             <button id="btn-delete-history" onclick="deleteSelected()" disabled class="flex-1 md:flex-none bg-white border border-red-200 text-red-600 px-4 py-2.5 rounded-lg text-[11px] font-bold hover:bg-red-50 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400">
                 <i class="fas fa-trash-alt"></i> HAPUS (<span id="selected-count-history">0</span>)
             </button>
@@ -1117,14 +1123,24 @@
     window.updateDeleteButton = function() {
         const checkedCount = document.querySelectorAll('.row-chk:checked').length;
         
+        // Update tombol di menu Monitoring
         if(document.getElementById('selected-count')) {
             document.getElementById('selected-count').innerText = checkedCount;
             document.getElementById('btn-delete-bulk').disabled = checkedCount === 0;
         }
+        if(document.getElementById('selected-count-edit')) {
+            document.getElementById('selected-count-edit').innerText = checkedCount;
+            document.getElementById('btn-edit-bulk').disabled = checkedCount === 0;
+        }
 
+        // Update tombol di menu History
         if(document.getElementById('selected-count-history')) {
             document.getElementById('selected-count-history').innerText = checkedCount;
             document.getElementById('btn-delete-history').disabled = checkedCount === 0;
+        }
+        if(document.getElementById('selected-count-edit-history')) {
+            document.getElementById('selected-count-edit-history').innerText = checkedCount;
+            document.getElementById('btn-edit-history').disabled = checkedCount === 0;
         }
     }
 
@@ -1367,6 +1383,130 @@
             document.getElementById('login-screen').classList.remove('hidden');
         }
     });
+    // ==========================================
+    // --- FITUR EDIT MASSAL (BULK EDIT) ---
+    // ==========================================
+    
+    window.openBulkEdit = function() {
+        const checkboxes = document.querySelectorAll('.row-chk:checked');
+        if(checkboxes.length === 0) return;
+
+        // Tampilkan jumlah data yang dipilih di judul popup
+        document.getElementById('bulk-count-display').innerText = checkboxes.length;
+
+        const allBulkFields = ['bulk-dn', 'bulk-cust', 'bulk-kota', 'bulk-unit', 'bulk-qty', 'bulk-vendor', 'bulk-nopol', 'bulk-driver', 'bulk-stuffing', 'bulk-bongkar'];
+
+        // Kosongkan form setiap kali dibuka
+        allBulkFields.forEach(id => {
+            document.getElementById(id).value = '';
+            document.getElementById(id).disabled = true;
+            document.getElementById(id).style.backgroundColor = '#f8fafc';
+        });
+
+        // Atur hak akses (Role) persis seperti edit biasa
+        if (USER_ROLE === 'ADMIN') {
+            allBulkFields.forEach(id => {
+                document.getElementById(id).disabled = false;
+                document.getElementById(id).style.backgroundColor = '#fff';
+            });
+        } else if (USER_ROLE === 'VENDOR') {
+            ['bulk-nopol', 'bulk-driver'].forEach(id => {
+                document.getElementById(id).disabled = false;
+                document.getElementById(id).style.backgroundColor = '#fff';
+            });
+        } else if (USER_ROLE === 'CUSTOMER') {
+            ['bulk-bongkar'].forEach(id => {
+                document.getElementById(id).disabled = false;
+                document.getElementById(id).style.backgroundColor = '#fff';
+            });
+        }
+
+        // Tampilkan Modal dengan animasi transisi
+        const modal = document.getElementById('modal-bulk-edit');
+        modal.style.display = 'flex';
+        modal.style.opacity = '0';
+        setTimeout(() => modal.style.opacity = '1', 10);
+    }
+
+    window.tutupBulkModal = function() {
+        const modal = document.getElementById('modal-bulk-edit');
+        modal.style.opacity = '0';
+        setTimeout(() => modal.style.display = 'none', 200);
+    }
+
+    window.simpanBulkEdit = function() {
+        const checkboxes = document.querySelectorAll('.row-chk:checked');
+        if (checkboxes.length === 0) return;
+
+        const updates = {};
+        
+        // Ambil nilai dari inputan
+        const dnVal = document.getElementById('bulk-dn').value.trim();
+        const custVal = document.getElementById('bulk-cust').value.trim();
+        const kotaVal = document.getElementById('bulk-kota').value.trim();
+        const unitVal = document.getElementById('bulk-unit').value.trim();
+        const qtyVal = document.getElementById('bulk-qty').value;
+        const vendorVal = document.getElementById('bulk-vendor').value.trim();
+        const nopolVal = document.getElementById('bulk-nopol').value.trim();
+        const driverVal = document.getElementById('bulk-driver').value.trim();
+        const stuffingVal = document.getElementById('bulk-stuffing').value;
+        const bongkarVal = document.getElementById('bulk-bongkar').value;
+
+        // Filter: Hanya kolom yang DIISI yang akan diperbarui (ditimpa) di database
+        if (USER_ROLE === 'ADMIN') {
+            if (dnVal) updates.dn = dnVal.toUpperCase();
+            if (custVal) updates.customer = custVal.toUpperCase();
+            if (kotaVal) updates.kota = kotaVal.toUpperCase();
+            if (unitVal) updates.unit = unitVal.toUpperCase();
+            if (qtyVal) updates.qty = parseFloat(qtyVal);
+            if (vendorVal) updates.vendor = vendorVal.toUpperCase();
+            if (nopolVal) updates.nopol = nopolVal.toUpperCase();
+            if (driverVal) updates.driver = driverVal.toUpperCase();
+            if (stuffingVal) updates.stuffing = stuffingVal;
+            if (bongkarVal) updates.bongkar = bongkarVal;
+        } else if (USER_ROLE === 'VENDOR') {
+            if (nopolVal) updates.nopol = nopolVal.toUpperCase();
+            if (driverVal) updates.driver = driverVal.toUpperCase();
+        } else if (USER_ROLE === 'CUSTOMER') {
+            if (bongkarVal) updates.bongkar = bongkarVal;
+        }
+
+        // Cek jika tombol simpan diklik tapi tidak ada yang diisi
+        if (Object.keys(updates).length === 0) {
+            alert('Tidak ada kolom yang diisi untuk diperbarui!');
+            return;
+        }
+
+        // Ubah teks tombol jadi loading
+        const btn = document.getElementById('btn-save-bulk');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
+        btn.disabled = true;
+
+        // Gunakan Firebase BATCH WRITE untuk mengeksekusi banyak data sekaligus
+        const batch = db.batch();
+        checkboxes.forEach((cb) => {
+            const docRef = db.collection("bookings").doc(cb.value);
+            batch.update(docRef, updates);
+        });
+
+        // Eksekusi penyimpanan ke database
+        batch.commit().then(() => {
+            tutupBulkModal(); 
+            
+            document.getElementById('checkAll').checked = false;
+            document.getElementById('checkAllHistory').checked = false;
+            document.querySelectorAll('.row-chk').forEach(c => c.checked = false);
+            updateDeleteButton();
+            
+            alert(`Berhasil mengupdate ${checkboxes.length} Laporan Masalah Delivery secara massal!`);
+        }).catch((err) => {
+            alert("Gagal update massal: " + err.message);
+        }).finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
     </script>
     
     <div id="modal-edit" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; transition: opacity 0.2s;">
@@ -1439,6 +1579,81 @@
         <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
             <button onclick="tutupModal()" style="padding: 10px 20px; background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s;">CANCEL</button>
             <button id="btn-save-modal" onclick="simpanPerubahan()" style="padding: 10px 24px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(37,99,235,0.2); transition: 0.2s;"><i class="fas fa-save mr-1"></i> SAVE CHANGES</button>
+        </div>
+    </div>
+</div>
+<div id="modal-bulk-edit" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; transition: opacity 0.2s;">
+    <div style="background: white; padding: 24px; width: 92%; max-width: 550px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; border: 1px solid #e2e8f0;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px;">
+            <h3 style="font-weight: 700; color: #1e293b; font-size: 15px; letter-spacing: 0.5px;"><i class="fas fa-layer-group text-blue-500 mr-2"></i> EDIT MASSAL (<span id="bulk-count-display">0</span> DATA)</h3>
+            <button onclick="tutupBulkModal()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:16px;"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div style="margin-bottom: 15px; font-size: 11px; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <i class="fas fa-info-circle text-blue-500 mr-1"></i> Kosongkan kolom jika tidak ingin mengubah data pada baris yang dipilih.
+        </div>
+
+        <div style="display: grid; gap: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">NO DN</label>
+                    <input type="text" id="bulk-dn" class="form-input" placeholder="Tetap/Ubah...">
+                </div>
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">CUSTOMER</label>
+                    <input type="text" id="bulk-cust" class="form-input" placeholder="Tetap/Ubah...">
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">KOTA</label>
+                    <input type="text" id="bulk-kota" class="form-input" placeholder="Tetap/Ubah...">
+                </div>
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">UNIT</label>
+                    <input type="text" id="bulk-unit" class="form-input" placeholder="Tetap/Ubah...">
+                </div>
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">QTY (TON)</label>
+                    <input type="number" id="bulk-qty" class="form-input" placeholder="Tetap/Ubah...">
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 5px;">
+                <label style="font-size: 10px; font-weight: 700; color: #3b82f6; display: block; margin-bottom: 10px; letter-spacing: 0.5px;">FLEET ASSIGNMENT (MASSAL)</label>
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">VENDOR NAME</label>
+                    <input type="text" id="bulk-vendor" class="form-input" placeholder="Ketik vendor baru...">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">NOPOL</label>
+                        <input type="text" id="bulk-nopol" class="form-input" placeholder="Ketik nopol...">
+                    </div>
+                    <div>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">DRIVER</label>
+                        <input type="text" id="bulk-driver" class="form-input" placeholder="Ketik driver...">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 5px;">
+                <div style="background: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
+                    <label style="font-size: 10px; font-weight: 700; color: #d97706; text-transform: uppercase; margin-bottom: 6px; display: block;"><i class="fas fa-box-open mr-1"></i> DATE STUFFING</label>
+                    <input type="date" id="bulk-stuffing" class="form-input" style="border-color: #fcd34d;">
+                </div>
+                <div style="background: #ecfdf5; padding: 12px; border-radius: 8px; border: 1px solid #a7f3d0;">
+                    <label style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; margin-bottom: 6px; display: block;"><i class="fas fa-check-double mr-1"></i> DATE BONGKAR</label>
+                    <input type="date" id="bulk-bongkar" class="form-input" style="border-color: #6ee7b7;">
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+            <button onclick="tutupBulkModal()" style="padding: 10px 20px; background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s;">BATAL</button>
+            <button id="btn-save-bulk" onclick="simpanBulkEdit()" style="padding: 10px 24px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(37,99,235,0.2); transition: 0.2s;"><i class="fas fa-save mr-1"></i> SIMPAN MASSAL</button>
         </div>
     </div>
 </div>
