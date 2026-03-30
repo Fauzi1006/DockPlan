@@ -84,13 +84,22 @@
         .table-container { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #cbd5e1; overflow: hidden; }
         table { border-collapse: collapse; width: 100%; table-layout: fixed; }
         thead { background: #1e293b; color: #f8fafc; }
-        thead th { padding: 12px 6px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #334155; border-bottom: 1px solid #334155; vertical-align: middle; text-align: center; }
+        thead th { padding: 10px 6px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #334155; border-bottom: 1px solid #334155; vertical-align: middle; text-align: center; }
         thead th:last-child { border-right: none; }
         td { padding: 10px 6px; font-size: 11px; font-weight: 500; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: middle; text-align: center; word-wrap: break-word; color: #475569; }
         td:last-child { border-right: none; }
         tbody tr:nth-child(even) { background-color: #f8fafc; }
         tbody tr:hover { background-color: #f1f5f9; }
         
+        /* EXCEL HEADER FILTER CSS */
+        .header-filter {
+            width: 100%; margin-top: 6px; padding: 2px 4px; font-size: 9px;
+            border: 1px solid #475569; border-radius: 4px; background-color: #334155;
+            color: #f8fafc; font-weight: 600; outline: none; cursor: pointer; text-transform: uppercase;
+        }
+        .header-filter:focus { border-color: #38bdf8; background-color: #1e293b; }
+        .header-filter option { background-color: white; color: #334155; }
+
         /* --- UTILS & FORMS --- */
         input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #2563eb; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -268,7 +277,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="relative w-full md:w-[350px]">
                         <i class="fas fa-search absolute left-3.5 top-3 text-slate-400 text-sm"></i>
-                        <input type="search" id="searchInput" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" onblur="this.setAttribute('readonly','readonly');" onkeyup="renderTable()" placeholder="Search DN, Vendor, Driver..." class="pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg w-full text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white uppercase transition-all">
+                        <input type="search" id="searchInput" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');" onblur="this.setAttribute('readonly','readonly');" onkeyup="renderTable()" placeholder="Search DN, FO, Vendor, Driver..." class="pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg w-full text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white uppercase transition-all">
                     </div>
                     
                     <div class="flex gap-2 w-full md:w-auto">
@@ -295,12 +304,13 @@
                                     <th style="width: 35px;"><input type="checkbox" id="checkAll" onclick="toggleSelectAll()"></th>
                                     <th style="width: 40px;">NO</th>
                                     <th style="width: 90px;">CREATED</th>
-                                    <th style="width: 120px;">NO DN</th>
-                                    <th style="width: 150px;">CUSTOMER</th>
-                                    <th style="width: 90px;">KOTA</th>
+                                    <th style="width: 120px;">NO DN<br><select id="filter-mon-dn" onchange="applyColumnFilter('monitoring', 'dn', this.value)" class="header-filter"></select></th>
+                                    <th style="width: 110px;">NO FO<br><select id="filter-mon-fo" onchange="applyColumnFilter('monitoring', 'fo', this.value)" class="header-filter"></select></th>
+                                    <th style="width: 150px;">CUSTOMER<br><select id="filter-mon-customer" onchange="applyColumnFilter('monitoring', 'customer', this.value)" class="header-filter"></select></th>
+                                    <th style="width: 90px;">KOTA<br><select id="filter-mon-kota" onchange="applyColumnFilter('monitoring', 'kota', this.value)" class="header-filter"></select></th>
                                     <th style="width: 60px;">QTY<br>(TON)</th>
-                                    <th style="width: 80px;">UNIT</th>
-                                    <th style="width: 110px;">VENDOR</th>
+                                    <th style="width: 80px;">UNIT<br><select id="filter-mon-unit" onchange="applyColumnFilter('monitoring', 'unit', this.value)" class="header-filter"></select></th>
+                                    <th style="width: 110px;">VENDOR<br><select id="filter-mon-vendor" onchange="applyColumnFilter('monitoring', 'vendor', this.value)" class="header-filter"></select></th>
                                     <th style="width: 130px;">NOPOL & DRIVER</th>
                                     <th style="width: 100px;">STUFFING</th>
                                     <th style="width: 100px;">BONGKAR</th>
@@ -342,12 +352,13 @@
                         <th style="width: 35px;"><input type="checkbox" id="checkAllHistory" onclick="toggleSelectAllHistory()"></th>
                         <th style="width: 40px;">NO</th>
                         <th style="width: 90px;">CREATED</th>
-                        <th style="width: 120px;">NO DN</th>
-                        <th style="width: 150px;">CUSTOMER</th>
-                        <th style="width: 90px;">KOTA</th>
+                        <th style="width: 120px;">NO DN<br><select id="filter-hist-dn" onchange="applyColumnFilter('history', 'dn', this.value)" class="header-filter"></select></th>
+                        <th style="width: 110px;">NO FO<br><select id="filter-hist-fo" onchange="applyColumnFilter('history', 'fo', this.value)" class="header-filter"></select></th>
+                        <th style="width: 150px;">CUSTOMER<br><select id="filter-hist-customer" onchange="applyColumnFilter('history', 'customer', this.value)" class="header-filter"></select></th>
+                        <th style="width: 90px;">KOTA<br><select id="filter-hist-kota" onchange="applyColumnFilter('history', 'kota', this.value)" class="header-filter"></select></th>
                         <th style="width: 60px;">QTY<br>(TON)</th>
-                        <th style="width: 80px;">UNIT</th>
-                        <th style="width: 110px;">VENDOR</th>
+                        <th style="width: 80px;">UNIT<br><select id="filter-hist-unit" onchange="applyColumnFilter('history', 'unit', this.value)" class="header-filter"></select></th>
+                        <th style="width: 110px;">VENDOR<br><select id="filter-hist-vendor" onchange="applyColumnFilter('history', 'vendor', this.value)" class="header-filter"></select></th>
                         <th style="width: 130px;">NOPOL & DRIVER</th>
                         <th style="width: 100px;">STUFFING</th>
                         <th style="width: 100px;">BONGKAR</th>
@@ -393,8 +404,9 @@
                         <h3 class="font-semibold text-slate-700 flex items-center gap-2 text-[13px] tracking-wide"><i class="fas fa-keyboard text-emerald-600"></i> INPUT MANUAL SINGLE</h3>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                             <div><label class="text-[10.5px] font-semibold text-slate-500 block mb-1.5">No DN *</label><input id="man-dn" class="form-input"></div>
+                            <div><label class="text-[10.5px] font-semibold text-slate-500 block mb-1.5">No FO</label><input id="man-fo" class="form-input"></div>
                             <div><label class="text-[10.5px] font-semibold text-slate-500 block mb-1.5">Customer *</label><input id="man-cust" class="form-input"></div>
                             <div><label class="text-[10.5px] font-semibold text-slate-500 block mb-1.5">Kota</label><input id="man-kota" class="form-input"></div>
                             <div><label class="text-[10.5px] font-semibold text-slate-500 block mb-1.5">Qty (Ton)</label><input type="number" id="man-qty" class="form-input"></div>
@@ -477,6 +489,7 @@
     let chartDistInstance = null;
     let chartMonthlyInstance = null;
     let chartFastSlowInstance = null;
+    let colFilters = { monitoring: {}, history: {} }; // Variabel state filter
 
     // --- 3. SISTEM LOGIN ---
     function prosesLogin() {
@@ -567,6 +580,13 @@
             localStorage.removeItem('dockplan_session'); 
             auth.signOut().then(() => location.reload());
         }
+    }
+
+    // --- FILTER KOLOM ---
+    window.applyColumnFilter = function(type, column, value) {
+        colFilters[type][column] = value;
+        if (type === 'monitoring') renderTable();
+        else renderHistory();
     }
 
     // --- 4. RENDER TABLE & LOGIC ---
@@ -737,7 +757,6 @@
 
     function renderTable() {
         let dataTampil = localData;
-        const filter = document.getElementById('searchInput').value.toUpperCase();
 
         if (USER_ROLE === 'VENDOR') {
             dataTampil = dataTampil.filter(item => item.vendor && item.vendor.toUpperCase() === USER_NAME);
@@ -748,9 +767,43 @@
 
         dataTampil = dataTampil.filter(item => !isHistory(item.bongkar));
 
+        // Generate dropdown options dynamically before filtering further
+        const uniqueVals = { dn: new Set(), fo: new Set(), customer: new Set(), kota: new Set(), unit: new Set(), vendor: new Set() };
+        dataTampil.forEach(item => {
+            if(item.dn) uniqueVals.dn.add(item.dn);
+            if(item.fo) uniqueVals.fo.add(item.fo);
+            if(item.customer) uniqueVals.customer.add(item.customer);
+            if(item.kota) uniqueVals.kota.add(item.kota);
+            if(item.unit) uniqueVals.unit.add(item.unit);
+            if(item.vendor) uniqueVals.vendor.add(item.vendor);
+        });
+
+        const colsToFilter = ['dn', 'fo', 'customer', 'kota', 'unit', 'vendor'];
+        colsToFilter.forEach(col => {
+            const selectEl = document.getElementById(`filter-mon-${col}`);
+            if(selectEl) {
+                const currentVal = colFilters.monitoring[col] || '';
+                let html = `<option value="">ALL</option>`;
+                [...uniqueVals[col]].sort().forEach(val => {
+                    html += `<option value="${val}" ${currentVal === val ? 'selected' : ''}>${val}</option>`;
+                });
+                selectEl.innerHTML = html;
+            }
+        });
+
+        // Terapkan Filter Dropdown (Kolom)
+        colsToFilter.forEach(col => {
+            if (colFilters.monitoring[col]) {
+                dataTampil = dataTampil.filter(i => i[col] === colFilters.monitoring[col]);
+            }
+        });
+
+        // Terapkan Filter Pencarian Global
+        const filter = document.getElementById('searchInput').value.toUpperCase();
         if(filter) {
             dataTampil = dataTampil.filter(i => 
                 (i.dn && i.dn.includes(filter)) || 
+                (i.fo && i.fo.toUpperCase().includes(filter)) ||
                 (i.customer && i.customer.toUpperCase().includes(filter)) ||
                 (i.kota && i.kota.toUpperCase().includes(filter)) ||
                 (i.unit && i.unit.toUpperCase().includes(filter)) ||
@@ -768,7 +821,7 @@
         updateDeleteButton();
 
         if(dataTampil.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" class="text-center py-12 text-slate-400 font-semibold bg-white">No active records found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="14" class="text-center py-12 text-slate-400 font-semibold bg-white">No active records found.</td></tr>`;
             mobileView.innerHTML = `<div class="text-center py-10 text-slate-400 font-semibold bg-white rounded-lg border border-slate-200">No active records.</div>`;
             return;
         }
@@ -791,6 +844,7 @@
                 <td class="font-semibold text-slate-400 text-[10px]">${idx+1}</td>
                 <td class="text-[10px] font-semibold text-slate-500">${showCreated}</td>
                 <td class="font-bold text-blue-700 text-[10.5px]">${item.dn}</td>
+                <td class="font-bold text-amber-600 text-[10.5px]">${item.fo || '-'}</td>
                 <td class="font-semibold text-slate-700 text-[10.5px]">${item.customer}</td>
                 <td class="font-semibold text-slate-500 text-[10.5px]">${item.kota}</td>
                 <td class="font-bold text-slate-800">${displayQty}</td>
@@ -817,6 +871,7 @@
                             <span class="text-[9px] text-slate-400 font-semibold">${dCreated.getDate()}/${dCreated.getMonth()+1} ${String(dCreated.getHours()).padStart(2,'0')}:${String(dCreated.getMinutes()).padStart(2,'0')}</span>
                         </div>
                         <h4 class="font-bold text-blue-700 text-[13px] leading-tight mb-0.5 truncate">${item.dn}</h4>
+                        <div class="text-[10px] font-bold text-amber-600 mb-0.5 truncate">FO: ${item.fo || '-'}</div>
                         <div class="text-[10px] font-semibold text-slate-500 uppercase truncate">${item.customer}</div>
                     </div>
                     <div class="text-right w-1/3">
@@ -860,7 +915,6 @@
 
     function renderHistory() {
         let dataTampil = localData;
-        const filter = document.getElementById('searchHistoryInput').value.toUpperCase();
 
         if (USER_ROLE === 'VENDOR') {
             dataTampil = dataTampil.filter(item => item.vendor && item.vendor.toUpperCase() === USER_NAME);
@@ -871,9 +925,43 @@
 
         dataTampil = dataTampil.filter(item => isHistory(item.bongkar));
 
+        // Generate dropdown options dynamically for history before filtering further
+        const uniqueVals = { dn: new Set(), fo: new Set(), customer: new Set(), kota: new Set(), unit: new Set(), vendor: new Set() };
+        dataTampil.forEach(item => {
+            if(item.dn) uniqueVals.dn.add(item.dn);
+            if(item.fo) uniqueVals.fo.add(item.fo);
+            if(item.customer) uniqueVals.customer.add(item.customer);
+            if(item.kota) uniqueVals.kota.add(item.kota);
+            if(item.unit) uniqueVals.unit.add(item.unit);
+            if(item.vendor) uniqueVals.vendor.add(item.vendor);
+        });
+
+        const colsToFilter = ['dn', 'fo', 'customer', 'kota', 'unit', 'vendor'];
+        colsToFilter.forEach(col => {
+            const selectEl = document.getElementById(`filter-hist-${col}`);
+            if(selectEl) {
+                const currentVal = colFilters.history[col] || '';
+                let html = `<option value="">ALL</option>`;
+                [...uniqueVals[col]].sort().forEach(val => {
+                    html += `<option value="${val}" ${currentVal === val ? 'selected' : ''}>${val}</option>`;
+                });
+                selectEl.innerHTML = html;
+            }
+        });
+
+        // Terapkan Filter Dropdown (Kolom)
+        colsToFilter.forEach(col => {
+            if (colFilters.history[col]) {
+                dataTampil = dataTampil.filter(i => i[col] === colFilters.history[col]);
+            }
+        });
+
+        // Terapkan Filter Pencarian Global
+        const filter = document.getElementById('searchHistoryInput').value.toUpperCase();
         if(filter) {
             dataTampil = dataTampil.filter(i => 
                 (i.dn && i.dn.includes(filter)) || 
+                (i.fo && i.fo.toUpperCase().includes(filter)) ||
                 (i.customer && i.customer.toUpperCase().includes(filter)) ||
                 (i.kota && i.kota.toUpperCase().includes(filter)) ||
                 (i.unit && i.unit.toUpperCase().includes(filter)) ||
@@ -892,7 +980,7 @@
         if(btnDel) { btnDel.disabled = true; document.getElementById('selected-count-history').innerText = '0'; }
 
         if(dataTampil.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" class="text-center py-12 text-slate-400 font-semibold bg-white">No history records found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="14" class="text-center py-12 text-slate-400 font-semibold bg-white">No history records found.</td></tr>`;
             mobileView.innerHTML = `<div class="text-center py-10 text-slate-400 font-semibold bg-white rounded-lg border border-slate-200">No history records.</div>`;
             return;
         }
@@ -914,6 +1002,7 @@
                 <td class="font-semibold text-slate-400 text-[10px]">${idx+1}</td>
                 <td class="text-[10px] font-semibold text-slate-400">${showCreated}</td>
                 <td class="font-bold text-slate-600 text-[10.5px]">${item.dn}</td>
+                <td class="font-bold text-amber-600 text-[10.5px]">${item.fo || '-'}</td>
                 <td class="font-semibold text-slate-500 text-[10.5px]">${item.customer}</td>
                 <td class="font-semibold text-slate-400 text-[10.5px]">${item.kota}</td>
                 <td class="font-bold text-slate-500">${displayQty}</td>
@@ -941,6 +1030,7 @@
                             <span class="text-[9px] text-slate-400 font-semibold">${dCreated.getDate()}/${dCreated.getMonth()+1}</span>
                         </div>
                         <h4 class="font-bold text-slate-600 text-[13px] leading-tight mb-0.5 truncate">${item.dn}</h4>
+                        <div class="text-[10px] font-bold text-amber-600 mb-0.5 truncate">FO: ${item.fo || '-'}</div>
                         <div class="text-[10px] font-semibold text-slate-400 uppercase truncate">${item.customer}</div>
                     </div>
                     <div class="text-right w-1/3 pt-3">
@@ -970,6 +1060,7 @@
 
         document.getElementById('edit-id').value = id;
         document.getElementById('edit-dn').value = item.dn;
+        document.getElementById('edit-fo').value = item.fo || '';
         document.getElementById('edit-cust').value = item.customer;
         document.getElementById('edit-unit').value = item.unit;
         document.getElementById('edit-qty').value = item.qty;
@@ -980,7 +1071,7 @@
         document.getElementById('edit-stuffing').value = item.stuffing;
         document.getElementById('edit-bongkar').value = item.bongkar;
 
-        const allFields = ['edit-dn','edit-cust','edit-unit','edit-qty','edit-kota','edit-vendor','edit-nopol','edit-driver','edit-stuffing','edit-bongkar'];
+        const allFields = ['edit-dn','edit-fo','edit-cust','edit-unit','edit-qty','edit-kota','edit-vendor','edit-nopol','edit-driver','edit-stuffing','edit-bongkar'];
         allFields.forEach(f => {
             const el = document.getElementById(f); el.disabled = true; el.style.backgroundColor = '#f8fafc'; el.style.color = '#94a3b8'; el.style.boxShadow = 'none';
         });
@@ -1011,6 +1102,7 @@
 
         if (USER_ROLE === 'ADMIN') {
             updates.dn = document.getElementById('edit-dn').value.toUpperCase();
+            updates.fo = document.getElementById('edit-fo').value.toUpperCase();
             updates.customer = document.getElementById('edit-cust').value.toUpperCase();
             updates.unit = document.getElementById('edit-unit').value.toUpperCase();
             updates.qty = document.getElementById('edit-qty').value;
@@ -1088,6 +1180,9 @@
         document.getElementById(`view-${pageId}`).classList.remove('hidden');
         document.getElementById(`menu-${pageId}`).classList.add('active');
         
+        // Reset Filter Saat Pindah Halaman
+        colFilters = { monitoring: {}, history: {} };
+
         if(pageId === 'dashboard-stats') {
             document.getElementById('page-subtitle').innerText = 'ANALYTICS & PERFORMANCE';
             renderAnalytics();
@@ -1188,7 +1283,7 @@
         }
 
         let csvContent = "\uFEFFsep=;\n"; 
-        csvContent += "NO;CREATED;NO DN;CUSTOMER;KOTA;QTY (TON);UNIT;VENDOR;NOPOL;DRIVER;STUFFING;BONGKAR\n";
+        csvContent += "NO;CREATED;NO DN;NO FO;CUSTOMER;KOTA;QTY (TON);UNIT;VENDOR;NOPOL;DRIVER;STUFFING;BONGKAR\n";
         
         const escapeCSV = (str) => {
             if (str === null || str === undefined || str === '') return '""';
@@ -1211,7 +1306,7 @@
 
             dnArray.forEach(singleDn => {
                 const row = [
-                    rowCount++, escapeCSV(formatTgl(item.created)), escapeCSV(singleDn),
+                    rowCount++, escapeCSV(formatTgl(item.created)), escapeCSV(singleDn), escapeCSV(item.fo || '-'),
                     escapeCSV(item.customer || '-'), escapeCSV(item.kota || '-'),
                     splitQty.toFixed(2).replace('.', ','), escapeCSV(item.unit || '-'),
                     escapeCSV(item.vendor || '-'), escapeCSV(item.nopol || '-'),
@@ -1250,8 +1345,7 @@
         }
 
         let csvContent = "\uFEFFsep=;\n"; 
-        // Tambahkan kolom STATUS khusus untuk history
-        csvContent += "NO;CREATED;NO DN;CUSTOMER;KOTA;QTY (TON);UNIT;VENDOR;NOPOL;DRIVER;STUFFING;BONGKAR;STATUS\n";
+        csvContent += "NO;CREATED;NO DN;NO FO;CUSTOMER;KOTA;QTY (TON);UNIT;VENDOR;NOPOL;DRIVER;STUFFING;BONGKAR;STATUS\n";
         
         const escapeCSV = (str) => {
             if (str === null || str === undefined || str === '') return '""';
@@ -1274,12 +1368,12 @@
 
             dnArray.forEach(singleDn => {
                 const row = [
-                    rowCount++, escapeCSV(formatTgl(item.created)), escapeCSV(singleDn),
+                    rowCount++, escapeCSV(formatTgl(item.created)), escapeCSV(singleDn), escapeCSV(item.fo || '-'),
                     escapeCSV(item.customer || '-'), escapeCSV(item.kota || '-'),
                     splitQty.toFixed(2).replace('.', ','), escapeCSV(item.unit || '-'),
                     escapeCSV(item.vendor || '-'), escapeCSV(item.nopol || '-'),
                     escapeCSV(item.driver || '-'), escapeCSV(formatTgl(item.stuffing)), escapeCSV(formatTgl(item.bongkar)),
-                    escapeCSV("CLOSED") // Keterangan bahwa data sudah selesai
+                    escapeCSV("CLOSED")
                 ];
                 csvContent += row.join(";") + "\n";
             });
@@ -1289,20 +1383,20 @@
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        // Nama file otomatis dibedakan menjadi HISTORY
         link.setAttribute("download", `DOCKPLAN_HISTORY_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
     }
 
     function saveManual() {
         const dn = document.getElementById('man-dn').value.toUpperCase();
+        const fo = document.getElementById('man-fo').value.toUpperCase();
         const cust = document.getElementById('man-cust').value.toUpperCase();
         
         if(!dn || !cust) { alert('No DN dan Customer wajib diisi!'); return; }
 
         db.collection("bookings").add({
             created: new Date().toISOString(),
-            dn: dn, customer: cust,
+            dn: dn, fo: fo, customer: cust,
             kota: document.getElementById('man-kota').value.toUpperCase(),
             qty: parseFloat(document.getElementById('man-qty').value) || 0,
             unit: document.getElementById('man-unit').value.toUpperCase(),
@@ -1312,7 +1406,7 @@
             stuffing: '', bongkar: '', isGb: false
         });
 
-        ['man-dn','man-cust','man-kota','man-qty','man-unit','man-vendor','man-nopol','man-driver'].forEach(id => document.getElementById(id).value = '');
+        ['man-dn','man-fo','man-cust','man-kota','man-qty','man-unit','man-vendor','man-nopol','man-driver'].forEach(id => document.getElementById(id).value = '');
         showPage('dashboard');
     }
 
@@ -1332,13 +1426,34 @@
             const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
             if(cols.length < 7) return;
 
-            const dn = cols[1]; const customer = cols[3]; const kota = cols[4];
+            const dn = cols[1]; 
+            const fo = cols[2]; 
+            const customer = cols[3]; 
+            const kota = cols[4];
             let qty = parseFloat(cols[5].replace(/,/g, ''));
+            
+            // LOGIKA PEMBACAAN UNIT OTOMATIS
             let cleanUnit = unitBatch || '-';
-            if(!unitBatch && cols[7]) cleanUnit = cols[7].split(/[ ;.,]/)[0].toUpperCase();
+            if (!unitBatch && cols[6]) {
+                let textUnit = cols[6].toUpperCase();
+                
+                // Cek apakah mengandung TRL, TRL1, TRL-
+                if (textUnit.includes('TRL')) {
+                    cleanUnit = 'TRAILER';
+                } 
+                // Cek apakah mengandung TRO, TRO1, TR0, TR01, TRO-
+                else if (textUnit.includes('TRO') || textUnit.includes('TR0')) {
+                    cleanUnit = 'TRONTON';
+                } 
+                // Jika tidak sesuai kriteria di atas, ambil kata pertama
+                else {
+                    cleanUnit = textUnit.split(/[ ;.,]/)[0];
+                }
+            }
 
             const gbMatch = line.toUpperCase().match(/GB\s*(\d+)/);
-            const entry = { created: inputTime, dn: dn, customer: customer, kota: kota, qty: qty, unit: cleanUnit, vendor: vendorBatch || '', nopol: '', driver: '', stuffing: '', bongkar: '', isGb: false };
+            
+            const entry = { created: inputTime, dn: dn, fo: fo, customer: customer, kota: kota, qty: qty, unit: cleanUnit, vendor: vendorBatch || '', nopol: '', driver: '', stuffing: '', bongkar: '', isGb: false };
 
             if (gbMatch) {
                 const gbCode = "GB" + gbMatch[1];
@@ -1394,7 +1509,7 @@
         // Tampilkan jumlah data yang dipilih di judul popup
         document.getElementById('bulk-count-display').innerText = checkboxes.length;
 
-        const allBulkFields = ['bulk-dn', 'bulk-cust', 'bulk-kota', 'bulk-unit', 'bulk-qty', 'bulk-vendor', 'bulk-nopol', 'bulk-driver', 'bulk-stuffing', 'bulk-bongkar'];
+        const allBulkFields = ['bulk-dn', 'bulk-fo', 'bulk-cust', 'bulk-kota', 'bulk-unit', 'bulk-qty', 'bulk-vendor', 'bulk-nopol', 'bulk-driver', 'bulk-stuffing', 'bulk-bongkar'];
 
         // Kosongkan form setiap kali dibuka
         allBulkFields.forEach(id => {
@@ -1442,6 +1557,7 @@
         
         // Ambil nilai dari inputan
         const dnVal = document.getElementById('bulk-dn').value.trim();
+        const foVal = document.getElementById('bulk-fo').value.trim();
         const custVal = document.getElementById('bulk-cust').value.trim();
         const kotaVal = document.getElementById('bulk-kota').value.trim();
         const unitVal = document.getElementById('bulk-unit').value.trim();
@@ -1455,6 +1571,7 @@
         // Filter: Hanya kolom yang DIISI yang akan diperbarui (ditimpa) di database
         if (USER_ROLE === 'ADMIN') {
             if (dnVal) updates.dn = dnVal.toUpperCase();
+            if (foVal) updates.fo = foVal.toUpperCase();
             if (custVal) updates.customer = custVal.toUpperCase();
             if (kotaVal) updates.kota = kotaVal.toUpperCase();
             if (unitVal) updates.unit = unitVal.toUpperCase();
@@ -1520,10 +1637,14 @@
         <input type="hidden" id="edit-id">
 
         <div style="display: grid; gap: 12px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                 <div>
                     <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">NO DN</label>
                     <input type="text" id="edit-dn" class="form-input">
+                </div>
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">NO FO</label>
+                    <input type="text" id="edit-fo" class="form-input">
                 </div>
                 <div>
                     <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">CUSTOMER</label>
@@ -1595,10 +1716,14 @@
         </div>
 
         <div style="display: grid; gap: 12px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                 <div>
                     <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">NO DN</label>
                     <input type="text" id="bulk-dn" class="form-input" placeholder="Tetap/Ubah...">
+                </div>
+                <div>
+                    <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">NO FO</label>
+                    <input type="text" id="bulk-fo" class="form-input" placeholder="Tetap/Ubah...">
                 </div>
                 <div>
                     <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: block;">CUSTOMER</label>
