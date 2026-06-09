@@ -195,58 +195,67 @@
         <div class="p-4 md:p-6 max-w-[100%] mx-auto">
 
             <div id="view-dashboard-stats" class="space-y-4 md:space-y-6">
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+    
+    <div class="bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3">
+        <h3 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+            <i class="fas fa-filter text-blue-500"></i> Filter Analitik
+        </h3>
+        <select id="analytic-customer-filter" onchange="renderAnalytics()" class="form-input w-full md:w-[250px] py-2 text-[11px] cursor-pointer bg-slate-50 border-slate-300">
+            <option value="">-- SEMUA CUSTOMER --</option>
+        </select>
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
                     <div class="stat-card slate flex-col md:flex-row justify-center md:justify-between">
                         <div class="text-center md:text-left w-full">
-                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">TOTAL CLOSED</p>
+                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">TOTAL SELESAI</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-slate-800 leading-none" id="analytic-total">0</h3>
                         </div>
                         <div class="icon-box bg-slate-50 text-slate-400 hidden md:flex"><i class="fas fa-box-check"></i></div>
                     </div>
                     <div class="stat-card blue flex-col md:flex-row justify-center md:justify-between">
                         <div class="text-center md:text-left w-full">
-                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">AVG LEAD TIME</p>
+                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">RATA-RATA WAKTU</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-blue-600 leading-none"><span id="analytic-avg">0</span> <span class="text-[11px] font-semibold text-slate-400 uppercase">Hari</span></h3>
                         </div>
                         <div class="icon-box bg-blue-50 text-blue-500 hidden md:flex"><i class="fas fa-stopwatch"></i></div>
                     </div>
                     <div class="stat-card emerald flex-col md:flex-row justify-center md:justify-between">
                         <div class="text-center md:text-left w-full">
-                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">FASTEST DELIVERY</p>
+                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">PENGIRIMAN TERCEPAT</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-emerald-600 leading-none"><span id="analytic-min">0</span> <span class="text-[11px] font-semibold text-slate-400 uppercase">Hari</span></h3>
                         </div>
                         <div class="icon-box bg-emerald-50 text-emerald-500 hidden md:flex"><i class="fas fa-bolt"></i></div>
                     </div>
                     <div class="stat-card red flex-col md:flex-row justify-center md:justify-between">
                         <div class="text-center md:text-left w-full">
-                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">LONGEST DELIVERY</p>
+                            <p class="text-[9.5px] font-semibold text-slate-500 uppercase tracking-widest truncate mb-1">PENGIRIMAN TERLAMA</p>
                             <h3 class="text-2xl md:text-3xl font-bold text-red-600 leading-none"><span id="analytic-max">0</span> <span class="text-[11px] font-semibold text-slate-400 uppercase">Hari</span></h3>
                         </div>
                         <div class="icon-box bg-red-50 text-red-500 hidden md:flex"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                        <h4 class="text-[11px] font-semibold text-slate-600 mb-4 uppercase tracking-wider text-center border-b border-slate-100 pb-2"><i class="fas fa-chart-pie text-red-500 mr-2"></i> Kecepatan Proses</h4>
-                        <div class="relative w-full h-[220px]">
-                            <canvas id="chartFastSlow"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                        <h4 class="text-[11px] font-semibold text-slate-600 mb-4 uppercase tracking-wider text-center border-b border-slate-100 pb-2"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> Distribusi (Hari)</h4>
-                        <div class="relative w-full h-[220px]">
-                            <canvas id="chartDistribution"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                        <h4 class="text-[11px] font-semibold text-slate-600 mb-4 uppercase tracking-wider text-center border-b border-slate-100 pb-2"><i class="fas fa-chart-line text-emerald-500 mr-2"></i> Trend Bulanan</h4>
-                        <div class="relative w-full h-[220px]">
-                            <canvas id="chartMonthly"></canvas>
-                        </div>
-                    </div>
-                </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <h4 class="text-[11px] font-semibold text-slate-600 mb-4 uppercase tracking-wider text-center border-b border-slate-100 pb-2"><i class="fas fa-chart-pie text-red-500 mr-2"></i> Kecepatan Proses</h4>
+            <div class="relative w-full h-[220px]">
+                <canvas id="chartFastSlow"></canvas>
             </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <h4 class="text-[11px] font-semibold text-slate-600 mb-4 uppercase tracking-wider text-center border-b border-slate-100 pb-2"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> Distribusi (Hari)</h4>
+            <div class="relative w-full h-[220px]">
+                <canvas id="chartDistribution"></canvas>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <h4 class="text-[11px] font-semibold text-slate-600 mb-4 uppercase tracking-wider text-center border-b border-slate-100 pb-2"><i class="fas fa-chart-line text-emerald-500 mr-2"></i> Trend Bulanan</h4>
+            <div class="relative w-full h-[220px]">
+                <canvas id="chartMonthly"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
             
             <div id="view-dashboard" class="hidden space-y-4 md:space-y-6">
                 <div class="grid grid-cols-3 gap-2 md:gap-5">
@@ -814,12 +823,43 @@
     function renderAnalytics() {
         let dataTampil = localData;
 
+        // 1. Filter awal berdasarkan Role
         if (USER_ROLE === 'VENDOR') {
             dataTampil = dataTampil.filter(item => item.vendor && item.vendor.toUpperCase() === USER_NAME);
         } else if (USER_ROLE === 'CUSTOMER') {
             dataTampil = dataTampil.filter(item => item.customer && item.customer.toUpperCase() === USER_NAME);
         }
 
+        // --- 2. MULAI LOGIKA BARU: FILTER CUSTOMER ---
+        const customerSelect = document.getElementById('analytic-customer-filter');
+        let currentSelection = '';
+        
+        if (customerSelect) {
+            currentSelection = customerSelect.value;
+            
+            // Ambil daftar customer unik untuk mengisi dropdown (hanya dari data yang sudah selesai/history)
+            const uniqueCustomers = new Set();
+            dataTampil.forEach(item => {
+                if(item.customer && isHistory(item.bongkar) && item.stuffing && item.bongkar) {
+                    uniqueCustomers.add(item.customer.toUpperCase());
+                }
+            });
+            
+            // Susun opsi dropdown dan pertahankan pilihan sebelumnya
+            let optionsHtml = `<option value="">-- SEMUA CUSTOMER --</option>`;
+            [...uniqueCustomers].sort().forEach(cust => {
+                optionsHtml += `<option value="${cust}" ${currentSelection === cust ? 'selected' : ''}>${cust}</option>`;
+            });
+            customerSelect.innerHTML = optionsHtml;
+        }
+
+        // Terapkan filter jika ada customer spesifik yang dipilih dari dropdown
+        if (currentSelection) {
+            dataTampil = dataTampil.filter(item => item.customer && item.customer.toUpperCase() === currentSelection);
+        }
+        // --- AKHIR LOGIKA BARU ---
+
+        // 3. Filter hanya data yang sudah selesai (History) untuk dihitung
         dataTampil = dataTampil.filter(item => isHistory(item.bongkar) && item.stuffing && item.bongkar);
 
         let totalClosed = dataTampil.length;
@@ -889,7 +929,7 @@
                 data: {
                     labels: distLabels,
                     datasets: [{
-                        label: 'Volume',
+                        label: 'Jumlah', // Sudah diubah ke Bahasa Indonesia
                         data: distData,
                         backgroundColor: '#3b82f6',
                         borderRadius: 4,
@@ -914,8 +954,8 @@
                 data: {
                     labels: monthLabels,
                     datasets: [
-                        { label: 'Avg Lead Time', data: monthDataAvg, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.4, borderWidth: 2, pointRadius: 3, yAxisID: 'y' },
-                        { type: 'bar', label: 'Volume', data: monthDataTotal, backgroundColor: '#cbd5e1', borderRadius: 4, barPercentage: 0.5, yAxisID: 'y1' }
+                        { label: 'Rata-rata Waktu', data: monthDataAvg, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.4, borderWidth: 2, pointRadius: 3, yAxisID: 'y' }, // Sudah diubah ke Bahasa Indonesia
+                        { type: 'bar', label: 'Jumlah', data: monthDataTotal, backgroundColor: '#cbd5e1', borderRadius: 4, barPercentage: 0.5, yAxisID: 'y1' } // Sudah diubah ke Bahasa Indonesia
                     ]
                 },
                 options: {
